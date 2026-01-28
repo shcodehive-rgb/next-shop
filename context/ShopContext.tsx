@@ -69,7 +69,6 @@ interface ShopContextType {
     updateSettings: (s: Partial<SiteSettings>) => void;
     searchQuery: string;
     setSearchQuery: (q: string) => void;
-    setSearchQuery: (q: string) => void;
     filteredProducts: Product[];
     isStoreActive: boolean;
 }
