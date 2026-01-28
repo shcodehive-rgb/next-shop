@@ -33,6 +33,8 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import StoreSuspended from "@/components/StoreSuspended";
 import StoreProtectedWrapper from "@/components/StoreProtectedWrapper";
 
+import ScrollToTop from "@/components/ScrollToTop";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -48,6 +50,7 @@ export default function RootLayout({
               {children}
             </StoreLayout>
             <WhatsAppButton />
+            <ScrollToTop />
           </StoreProtectedWrapper>
           <Toaster position="top-center" richColors />
         </ShopProvider>
