@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Product, useShop } from "@/context/ShopContext";
-import { Dialog, DialogContent } from "@/components/ui/dialog" // Assuming we have shadcn or will use standard fixed div
 // Wait, I don't have shadcn installed. I'll use a custom fixed div like CheckoutModal.
 import { X, CheckCircle, Loader2, Minus, Plus, ShoppingCart } from "lucide-react";
 import Swal from "sweetalert2";
