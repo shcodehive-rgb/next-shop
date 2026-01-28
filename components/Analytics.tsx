@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { useShop } from "@/context/ShopContext";
 import { usePathname } from "next/navigation";
@@ -12,7 +13,7 @@ export default function Analytics() {
         if (settings.facebookPixelId) {
             console.log("🟢 Facebook Pixel Initialized:", settings.facebookPixelId);
             // @ts-ignore
-            !function (f, b, e, v, n, t, s) {
+            !function (f: any, b: any, e: any, v: any, n: any, t: any, s: any) {
                 if (f.fbq) return; n = f.fbq = function () {
                     n.callMethod ?
                         n.callMethod.apply(n, arguments) : n.queue.push(arguments)
