@@ -27,14 +27,19 @@ export default function AdminProducts() {
         setLoading(true);
         try {
             if (editingId) {
-                updateProduct(editingId, formData);
-                await setDoc(doc(db, "products", editingId), { ...formData, id: editingId }, { merge: true });
+                const updateData = {
+                    ...formData,
+                    originalPrice: formData.originalPrice ? Number(formData.originalPrice) : undefined
+                };
+                updateProduct(editingId, updateData as Partial<Product>);
+                await setDoc(doc(db, "products", editingId), { ...updateData, id: editingId }, { merge: true });
                 toast.success("Product Updated");
                 setEditingId(null);
             } else {
                 const newProduct: Product = {
                     id: Date.now().toString(),
                     ...formData,
+                    originalPrice: formData.originalPrice ? Number(formData.originalPrice) : undefined,
                     image: formData.images[0] || formData.image || "https://placehold.co/400?text=No+Image",
                     images: formData.images.length > 0 ? formData.images : (formData.image ? [formData.image] : [])
                 };
@@ -67,7 +72,7 @@ export default function AdminProducts() {
             minWholesaleQty: p.minWholesaleQty || 0,
             allowAddToCart: p.allowAddToCart ?? true,
             isBestSeller: p.isBestSeller || false,
-            originalPrice: p.originalPrice || "",
+            originalPrice: p.originalPrice ? String(p.originalPrice) : "",
             discountLabel: p.discountLabel || "",
             reviews: p.reviews || []
         });

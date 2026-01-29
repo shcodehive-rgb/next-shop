@@ -24,7 +24,6 @@ export interface Product {
     wholesalePrice?: string;
     minWholesaleQty?: number;
     allowAddToCart?: boolean;
-    allowAddToCart?: boolean;
     reviews?: Review[];
     isBestSeller?: boolean; // New Field
     originalPrice?: number; // Pre-discount price
@@ -50,7 +49,6 @@ export interface SiteSettings {
     tiktokPixelId?: string;
     favicon?: string;
     primaryColor?: string;
-    phoneNumber?: string; // WhatsApp
     phoneNumber?: string; // WhatsApp
     adminPassword?: string;
     middleBanner?: string;
