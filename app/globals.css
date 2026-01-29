@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light !important;
 }
 
 @theme inline {
@@ -11,10 +12,12 @@
   --font-tajawal: var(--font-tajawal);
 }
 
+/* 🛑 FORCE LIGHT MODE - Disable dark mode completely */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff !important;
+    --foreground: #171717 !important;
+    color-scheme: light !important;
   }
 }
 
@@ -22,4 +25,6 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-tajawal), sans-serif;
+  background-color: #ffffff !important;
+  color: #171717 !important;
 }

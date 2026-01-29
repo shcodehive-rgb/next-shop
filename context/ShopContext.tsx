@@ -24,7 +24,11 @@ export interface Product {
     wholesalePrice?: string;
     minWholesaleQty?: number;
     allowAddToCart?: boolean;
+    allowAddToCart?: boolean;
     reviews?: Review[];
+    isBestSeller?: boolean; // New Field
+    originalPrice?: number; // Pre-discount price
+    discountLabel?: string; // e.g. "-30%"
 }
 
 export interface Category {
@@ -47,7 +51,11 @@ export interface SiteSettings {
     favicon?: string;
     primaryColor?: string;
     phoneNumber?: string; // WhatsApp
+    phoneNumber?: string; // WhatsApp
     adminPassword?: string;
+    middleBanner?: string;
+    middleBannerLink?: string;
+    showFeatures?: boolean;
 }
 
 // ... (ShopContextType remains mostly same but Product matches new ref)
@@ -80,6 +88,7 @@ const defaultSettings: SiteSettings = {
     sheetUrl: "",
     heroImage: "https://placehold.co/600x400/10b981/ffffff?text=Welcome",
     primaryColor: "#10b981", // Emerald 500 default
+    showFeatures: true,
 };
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);

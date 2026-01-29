@@ -1,73 +1,70 @@
 "use client";
-
-import { MessageSquarePlus, Plus } from "lucide-react";
-import { Product } from "@/context/ShopContext";
+import React from 'react';
+import Link from 'next/link';
 
 interface ProductCardProps {
-    product: Product;
-    onClick: (p: Product) => void;
+  product: any;
+  onClick?: (p: any) => void;
 }
 
 export default function ProductCard({ product, onClick }: ProductCardProps) {
-    // Logic for badges (e.g. if price < some value, or just generic "New")
-    const isPromo = false;
+  // Logic to calculate discount
+  const price = Number(product.price);
+  const original = product.originalPrice ? Number(product.originalPrice) : 0;
+  const hasDiscount = original > price;
 
-    return (
-        <div
-            onClick={() => onClick(product)}
-            className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer border border-transparent hover:border-emerald-100 relative flex flex-col h-full"
-        >
-            {/* Badge */}
-            {isPromo && (
-                <div className="absolute top-3 left-3 bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-1 rounded-full z-10">
-                    PROMO
-                </div>
-            )}
+  // 🛑 CHANGED: Only show badge if user manually entered discountLabel in Admin
+  // Do NOT auto-calculate percentages
+  const showBadge = product.discountLabel && product.discountLabel.trim() !== "";
 
-            {/* Image Area */}
-            <div className="aspect-square relative mb-3 overflow-hidden rounded-xl bg-gray-50">
-                <img
-                    src={product.image}
-                    alt={product.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-            </div>
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault();
+      onClick(product);
+    }
+  };
 
-            {/* Content */}
-            <div className="flex flex-col flex-1">
-                {/* Category/Unit (Optional) */}
-                <span className="text-xs text-gray-400 font-bold mb-1">{product.category || "General"}</span>
+  return (
+    <Link 
+      href={`/product/${product.id}`}
+      onClick={handleClick}
+      className="group flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative"
+    >
+      {/* 1. IMAGE CONTAINER (SQUARE & WHITE) */}
+      <div className="relative aspect-square w-full bg-white overflow-hidden border-b border-gray-50">
+        <img 
+          src={product.images && product.images.length > 0 ? product.images[0] : product.image} 
+          alt={product.title} 
+          className="w-full h-full object-contain p-2 transform group-hover:scale-105 transition-transform duration-500"
+        />
+        
+        {/* Discount Badge - Only if manually set */}
+        {showBadge && (
+          <div className="absolute top-2 left-2 z-10">
+            <span className="bg-red-600 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-md shadow-sm animate-pulse">
+              {product.discountLabel}
+            </span>
+          </div>
+        )}
+      </div>
 
-                {/* Title */}
-                <h3 className="text-gray-900 font-bold text-sm md:text-base leading-snug line-clamp-2 mb-3 flex-1">
-                    {product.title}
-                </h3>
+      {/* 2. DETAILS (Compact) */}
+      <div className="p-3 flex flex-col flex-grow">
+        <h3 className="text-gray-800 font-bold text-sm leading-tight mb-2 text-right line-clamp-2">
+          {product.title}
+        </h3>
 
-                {/* Bottom Row */}
-                <div className="flex items-center justify-between mt-auto">
-                    <div className="flex flex-col">
-                        <span className="text-emerald-700 font-black text-lg">
-                            {product.price} <span className="text-xs font-medium">DH</span>
-                        </span>
-                        {product.wholesalePrice && (
-                            <span className="text-xs text-blue-500 font-bold">
-                                Wholesale: {product.wholesalePrice}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Circular Action Button */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation(); // Prevent card click, just modal? actually card click does same.
-                            onClick(product);
-                        }}
-                        className="w-10 h-10 rounded-full bg-gray-100 text-gray-800 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors shadow-sm group-active:scale-90"
-                    >
-                        <Plus className="w-5 h-5" />
-                    </button>
-                </div>
-            </div>
+        <div className="mt-auto flex flex-col items-end">
+          {hasDiscount && (
+            <span className="text-xs text-gray-400 line-through">
+              {original} DH
+            </span>
+          )}
+          <span className="text-green-600 font-extrabold text-lg">
+            {price} <span className="text-xs font-normal text-gray-500">DH</span>
+          </span>
         </div>
-    );
+      </div>
+    </Link>
+  );
 }

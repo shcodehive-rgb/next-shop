@@ -113,6 +113,12 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                                 سعر الجملة مفعل! 🔥
                             </div>
                         )}
+                        {/* Discount Badge */}
+                        {(product.discountLabel) && (
+                            <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-black shadow-md z-10">
+                                {product.discountLabel}
+                            </div>
+                        )}
 
                         {/* Nav Arrows (Optional, but thumbnails are enough for now) */}
                     </div>
@@ -138,9 +144,14 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
 
                     <div className="mb-6">
                         <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">{product.title}</h2>
-                        <div className="flex items-baseline gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                             <span className="text-3xl font-black" style={{ color: settings.primaryColor || '#059669' }}>{totalPrice} DH</span>
-                            {isWholesaleActive && <span className="text-gray-400 line-through text-lg">{regularPrice * qty} DH</span>}
+                            {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+                                <span className="text-xl text-gray-400 font-bold line-through decoration-red-500 decoration-2">
+                                    {(Number(product.originalPrice) * qty).toFixed(2).replace(/\.00$/, '')} DH
+                                </span>
+                            )}
+                            {isWholesaleActive && <span className="text-blue-600 font-bold text-sm bg-blue-50 px-2 py-1 rounded-lg">سعر الجملة مفعل</span>}
                         </div>
                         {minWholesale > 0 && (
                             <p className="text-sm text-blue-600 mt-1 font-bold">
