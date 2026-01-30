@@ -110,7 +110,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // 🔥 1. REAL-TIME DATA SYNC (The Fix)
     useEffect(() => {
         // A. Listen to Products (Real-time from Firebase)
-        const unsubProducts = onSnapshot(collection(db, "demo_chima"), (snapshot) => {
+        const unsubProducts = onSnapshot(collection(db, "products"), (snapshot) => {
             const productList = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
