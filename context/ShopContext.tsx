@@ -1,6 +1,16 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { 
+    collection, 
+    onSnapshot, 
+    doc, 
+    getDoc, 
+    setDoc, 
+    deleteDoc, 
+    updateDoc 
+} from "firebase/firestore";
+import { db } from "@/lib/firebase"; // تأكدي أن هذا المسار صحيح
 
 // --- TYPES ---
 export interface Review {
@@ -15,19 +25,19 @@ export interface Product {
     id: string;
     title: string;
     price: string;
-    image: string; // Primary Image (Kept for backward compat)
-    images?: string[]; // Gallery
+    image: string;
+    images?: string[];
     category: string;
     description?: string;
-    cost?: string; // Purchase Price
-    stock?: number; // Stock Quantity
+    cost?: string;
+    stock?: number;
     wholesalePrice?: string;
     minWholesaleQty?: number;
     allowAddToCart?: boolean;
     reviews?: Review[];
-    isBestSeller?: boolean; // New Field
-    originalPrice?: number; // Pre-discount price
-    discountLabel?: string; // e.g. "-30%"
+    isBestSeller?: boolean;
+    originalPrice?: number;
+    discountLabel?: string;
 }
 
 export interface Category {
@@ -49,14 +59,12 @@ export interface SiteSettings {
     tiktokPixelId?: string;
     favicon?: string;
     primaryColor?: string;
-    phoneNumber?: string; // WhatsApp
+    phoneNumber?: string;
     adminPassword?: string;
     middleBanner?: string;
     middleBannerLink?: string;
     showFeatures?: boolean;
 }
-
-// ... (ShopContextType remains mostly same but Product matches new ref)
 
 interface ShopContextType {
     products: Product[];
@@ -85,7 +93,7 @@ const defaultSettings: SiteSettings = {
     telegramId: "",
     sheetUrl: "",
     heroImage: "https://placehold.co/600x400/10b981/ffffff?text=Welcome",
-    primaryColor: "#10b981", // Emerald 500 default
+    primaryColor: "#10b981",
     showFeatures: true,
 };
 
@@ -96,162 +104,154 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const [categories, setCategories] = useState<Category[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
-    const [searchQuery, setSearchQuery] = useState(""); // Search State
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [isStoreActive, setIsStoreActive] = useState(true); // Default active
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isStoreActive, setIsStoreActive] = useState(true);
 
-    // 1. LOAD DATA & CHECK STATUS
+    // 🔥 1. REAL-TIME DATA SYNC (The Fix)
     useEffect(() => {
-        try {
-            // Local Storage Load
-            const localProd = localStorage.getItem("admin_products");
-            const localCats = localStorage.getItem("admin_categories");
-            const localSet = localStorage.getItem("siteSettings");
+        // A. Listen to Products (Real-time from Firebase)
+        const unsubProducts = onSnapshot(collection(db, "products"), (snapshot) => {
+            const productList = snapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data() 
+            })) as Product[];
+            setProducts(productList);
+        }, (error) => {
+            console.error("Error fetching products:", error);
+        });
 
-            if (localProd) {
-                const parsedProducts: Product[] = JSON.parse(localProd);
-                const migratedProducts = parsedProducts.map(p => ({
-                    ...p,
-                    images: p.images || (p.image ? [p.image] : [])
-                }));
-                setProducts(migratedProducts);
+        // B. Listen to Categories (Real-time from Firebase)
+        const unsubCategories = onSnapshot(collection(db, "categories"), (snapshot) => {
+            const categoryList = snapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data() 
+            })) as Category[];
+            setCategories(categoryList);
+        }, (error) => {
+            console.error("Error fetching categories:", error);
+        });
+
+        // C. Listen to Settings (Real-time)
+        const unsubSettings = onSnapshot(doc(db, "settings", "general"), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data() as any;
+                setSettings({ ...defaultSettings, ...data });
+
+                // Kill Switch Logic
+                if (data.storeStatus === 'suspended') {
+                    setIsStoreActive(false);
+                } else {
+                    // Simple logic: if not suspended, it's active
+                    setIsStoreActive(true);
+                }
             }
-            if (localCats) setCategories(JSON.parse(localCats));
-            if (localSet) setSettings({ ...defaultSettings, ...JSON.parse(localSet) });
+        });
 
-            setIsLoaded(true);
+        // D. Load Cart from LocalStorage (Cart should remain local)
+        const localCart = localStorage.getItem("cart");
+        if (localCart) setCart(JSON.parse(localCart));
 
-            // 🛑 KILL SWITCH CHECK (Firebase)
-            import("firebase/firestore").then(({ doc, getDoc }) => {
-                const { db } = require("@/lib/firebase");
-                // Correctly define settingsRef before use
-                const settingsRef = doc(db, "settings", "general");
-
-                getDoc(settingsRef).then((snap: any) => {
-                    if (snap.exists()) {
-                        const data = snap.data();
-
-                        // 1. Manual Kill Switch (Priority)
-                        if (data.storeStatus === 'suspended') {
-                            setIsStoreActive(false);
-                            return;
-                        }
-
-                        // 2. Automated Trial Logic
-                        const isPaid = data.isPaid === true;
-                        const trialStartDate = data.trialStartDate ? new Date(data.trialStartDate) : null;
-
-                        if (isPaid) {
-                            // ✅ Client paid -> Always Active
-                            setIsStoreActive(true);
-                        } else if (trialStartDate) {
-                            // ⏳ Check Trial Duration
-                            const now = new Date();
-                            const diffTime = Math.abs(now.getTime() - trialStartDate.getTime());
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                            if (diffDays > 3) {
-                                console.log("🚫 Trial Expired");
-                                setIsStoreActive(false); // Lock it!
-                            } else {
-                                setIsStoreActive(true); // Still in trial
-                            }
-                        } else {
-                            // Fallback: If no date set, assume active
-                            setIsStoreActive(true);
-                        }
-                    }
-                });
-            });
-
-        } catch (e) {
-            console.error("Failed to load", e);
-        }
+        // Cleanup listeners on unmount
+        return () => {
+            unsubProducts();
+            unsubCategories();
+            unsubSettings();
+        };
     }, []);
 
-    // 2. PERSISTENCE HELPERS
-    const saveProducts = (newProducts: Product[]) => {
-        setProducts(newProducts);
+    // --- ACTIONS WITH FIREBASE SYNC ---
+
+    // إضافة منتج (يكتب في Firebase مباشرة)
+    const addProduct = async (p: Product) => {
         try {
-            localStorage.setItem("admin_products", JSON.stringify(newProducts));
-        } catch (e: any) {
-            if (e.name === 'QuotaExceededError') {
-                console.warn('LocalStorage quota exceeded for products. Data may not persist.');
-                // Silently fail - products are still in memory
-            } else {
-                throw e;
-            }
+            await setDoc(doc(db, "products", p.id), p);
+            // No need to setProducts manually, onSnapshot will do it
+        } catch (e) {
+            console.error("Error adding product", e);
         }
     };
 
-    const saveCategories = (newCategories: Category[]) => {
-        setCategories(newCategories);
+    // تحديث منتج
+    const updateProduct = async (id: string, p: Partial<Product>) => {
         try {
-            localStorage.setItem("admin_categories", JSON.stringify(newCategories));
-        } catch (e: any) {
-            if (e.name === 'QuotaExceededError') {
-                console.warn('LocalStorage quota exceeded for categories. Data may not persist.');
-                // Silently fail - categories are still in memory
-            } else {
-                throw e;
-            }
+            await updateDoc(doc(db, "products", id), p);
+        } catch (e) {
+            console.error("Error updating product", e);
         }
     };
 
-    const saveSettings = (newSettings: SiteSettings) => {
-        setSettings(newSettings);
+    // حذف منتج
+    const deleteProduct = async (id: string) => {
         try {
-            localStorage.setItem("siteSettings", JSON.stringify(newSettings));
-        } catch (e: any) {
-            if (e.name === 'QuotaExceededError') {
-                console.warn('LocalStorage quota exceeded for settings. Data may not persist.');
-                // Silently fail - settings are still in memory
-            } else {
-                throw e;
-            }
+            await deleteDoc(doc(db, "products", id));
+        } catch (e) {
+            console.error("Error deleting product", e);
         }
     };
 
-    // --- ACTIONS ---
-    const addProduct = (p: Product) => saveProducts([...products, p]);
-
-    const updateProduct = (id: string, p: Partial<Product>) => {
-        saveProducts(products.map((item) => (item.id === id ? { ...item, ...p } : item)));
+    // إضافة تصنيف
+    const addCategory = async (c: Category) => {
+        try {
+            await setDoc(doc(db, "categories", c.id), c);
+        } catch (e) {
+            console.error("Error adding category", e);
+        }
     };
 
-    const deleteProduct = (id: string) => {
-        saveProducts(products.filter((item) => item.id !== id));
+    // حذف تصنيف
+    const deleteCategory = async (id: string) => {
+        try {
+            await deleteDoc(doc(db, "categories", id));
+        } catch (e) {
+            console.error("Error deleting category", e);
+        }
     };
 
-    const addCategory = (c: Category) => saveCategories([...categories, c]);
-
-    const deleteCategory = (id: string) => saveCategories(categories.filter(c => c.id !== id));
-
-    const updateSettings = (s: Partial<SiteSettings>) => {
-        saveSettings({ ...settings, ...s });
+    // تحديث الإعدادات
+    const updateSettings = async (s: Partial<SiteSettings>) => {
+        try {
+            await setDoc(doc(db, "settings", "general"), { ...settings, ...s }, { merge: true });
+        } catch (e) {
+            console.error("Error saving settings", e);
+        }
     };
 
-    // --- CART ---
+    // --- CART (Local Only) ---
     const addToCart = (p: Product, qty = 1) => {
         setCart((prev) => {
             const existing = prev.find((i) => i.id === p.id);
+            let newCart;
             if (existing) {
-                return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + qty } : i));
+                newCart = prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + qty } : i));
+            } else {
+                newCart = [...prev, { ...p, qty }];
             }
-            return [...prev, { ...p, qty }];
+            localStorage.setItem("cart", JSON.stringify(newCart));
+            return newCart;
         });
     };
 
     const removeFromCart = (id: string) => {
-        setCart((prev) => prev.filter((i) => i.id !== id));
+        setCart((prev) => {
+            const newCart = prev.filter((i) => i.id !== id);
+            localStorage.setItem("cart", JSON.stringify(newCart));
+            return newCart;
+        });
     };
 
     const updateCartQty = (id: string, qty: number) => {
         if (qty < 1) return removeFromCart(id);
-        setCart((prev) => prev.map((i) => (i.id === id ? { ...i, qty } : i)));
+        setCart((prev) => {
+            const newCart = prev.map((i) => (i.id === id ? { ...i, qty } : i));
+            localStorage.setItem("cart", JSON.stringify(newCart));
+            return newCart;
+        });
     };
 
-    const clearCart = () => setCart([]);
+    const clearCart = () => {
+        setCart([]);
+        localStorage.removeItem("cart");
+    };
 
     // --- SEARCH ---
     const filteredProducts = products.filter(p =>
@@ -282,7 +282,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 isStoreActive
             }}
         >
-            {/* Avoid Hydration mismatch by rendering children only after mount, or just accept clean flicker */}
             {children}
         </ShopContext.Provider>
     );
