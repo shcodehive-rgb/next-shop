@@ -1,14 +1,14 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { 
-    collection, 
-    onSnapshot, 
-    doc, 
-    getDoc, 
-    setDoc, 
-    deleteDoc, 
-    updateDoc 
+import {
+    collection,
+    onSnapshot,
+    doc,
+    getDoc,
+    setDoc,
+    deleteDoc,
+    updateDoc
 } from "firebase/firestore";
 import { db } from "@/lib/firebase"; // تأكدي أن هذا المسار صحيح
 
@@ -110,10 +110,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // 🔥 1. REAL-TIME DATA SYNC (The Fix)
     useEffect(() => {
         // A. Listen to Products (Real-time from Firebase)
-        const unsubProducts = onSnapshot(collection(db, "products"), (snapshot) => {
-            const productList = snapshot.docs.map(doc => ({ 
-                id: doc.id, 
-                ...doc.data() 
+        const unsubProducts = onSnapshot(collection(db, "demo_chima"), (snapshot) => {
+            const productList = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
             })) as Product[];
             setProducts(productList);
         }, (error) => {
@@ -122,9 +122,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
         // B. Listen to Categories (Real-time from Firebase)
         const unsubCategories = onSnapshot(collection(db, "categories"), (snapshot) => {
-            const categoryList = snapshot.docs.map(doc => ({ 
-                id: doc.id, 
-                ...doc.data() 
+            const categoryList = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
             })) as Category[];
             setCategories(categoryList);
         }, (error) => {
