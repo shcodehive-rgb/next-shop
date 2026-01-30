@@ -31,11 +31,11 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
       className="group flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative"
     >
       {/* 1. IMAGE CONTAINER (SQUARE & WHITE) */}
-      <div className="relative aspect-square w-full bg-white overflow-hidden border-b border-gray-50">
+      <div className="relative aspect-square w-full bg-white overflow-hidden rounded-t-xl border-b border-gray-50">
         <img 
           src={product.images && product.images.length > 0 ? product.images[0] : product.image} 
           alt={product.title} 
-          className="w-full h-full object-contain p-2 transform group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         
         {/* Discount Badge - Only if manually set */}

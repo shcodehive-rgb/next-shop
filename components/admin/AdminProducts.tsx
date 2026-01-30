@@ -29,7 +29,7 @@ export default function AdminProducts() {
             if (editingId) {
                 const updateData = {
                     ...formData,
-                    originalPrice: formData.originalPrice ? Number(formData.originalPrice) : undefined
+                    originalPrice: formData.originalPrice ? Number(formData.originalPrice) : 0
                 };
                 updateProduct(editingId, updateData as Partial<Product>);
                 await setDoc(doc(db, "products", editingId), { ...updateData, id: editingId }, { merge: true });
@@ -39,7 +39,7 @@ export default function AdminProducts() {
                 const newProduct: Product = {
                     id: Date.now().toString(),
                     ...formData,
-                    originalPrice: formData.originalPrice ? Number(formData.originalPrice) : undefined,
+                    originalPrice: formData.originalPrice ? Number(formData.originalPrice) : 0,
                     image: formData.images[0] || formData.image || "https://placehold.co/400?text=No+Image",
                     images: formData.images.length > 0 ? formData.images : (formData.image ? [formData.image] : [])
                 };

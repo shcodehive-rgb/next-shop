@@ -172,17 +172,44 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // 2. PERSISTENCE HELPERS
     const saveProducts = (newProducts: Product[]) => {
         setProducts(newProducts);
-        localStorage.setItem("admin_products", JSON.stringify(newProducts));
+        try {
+            localStorage.setItem("admin_products", JSON.stringify(newProducts));
+        } catch (e: any) {
+            if (e.name === 'QuotaExceededError') {
+                console.warn('LocalStorage quota exceeded for products. Data may not persist.');
+                // Silently fail - products are still in memory
+            } else {
+                throw e;
+            }
+        }
     };
 
     const saveCategories = (newCategories: Category[]) => {
         setCategories(newCategories);
-        localStorage.setItem("admin_categories", JSON.stringify(newCategories));
+        try {
+            localStorage.setItem("admin_categories", JSON.stringify(newCategories));
+        } catch (e: any) {
+            if (e.name === 'QuotaExceededError') {
+                console.warn('LocalStorage quota exceeded for categories. Data may not persist.');
+                // Silently fail - categories are still in memory
+            } else {
+                throw e;
+            }
+        }
     };
 
     const saveSettings = (newSettings: SiteSettings) => {
         setSettings(newSettings);
-        localStorage.setItem("siteSettings", JSON.stringify(newSettings));
+        try {
+            localStorage.setItem("siteSettings", JSON.stringify(newSettings));
+        } catch (e: any) {
+            if (e.name === 'QuotaExceededError') {
+                console.warn('LocalStorage quota exceeded for settings. Data may not persist.');
+                // Silently fail - settings are still in memory
+            } else {
+                throw e;
+            }
+        }
     };
 
     // --- ACTIONS ---
