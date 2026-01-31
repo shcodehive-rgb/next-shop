@@ -1,5 +1,7 @@
 "use client";
 
+export const revalidate = 3600;
+
 import { useShop, Product } from "@/context/ShopContext";
 import HeroBanner from "@/components/HeroBanner";
 import CategoryRail from "@/components/CategoryRail";
