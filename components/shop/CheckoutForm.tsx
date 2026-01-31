@@ -50,27 +50,20 @@ export default function CheckoutForm({ product }: CheckoutFormProps) {
             // @ts-ignore
             const telegramTargetId = settings.telegramNotificationId || settings.telegramId;
 
-            if (telegramTargetId) {
-                try {
-                    await fetch('/api/order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            orderData: {
-                                id: orderRef.key,
-                                customerName: formData.name,
-                                customerPhone: formData.phone,
-                                customerCity: formData.city,
-                                items: items,
-                                total: total
-                            },
-                            // ✅✅✅ هذا هو التعديل المهم باش يخدم
-                            merchantTelegramId: telegramTargetId
-                        })
-                    });
-                } catch (err) {
-                    console.error("Notify Error", err);
-                }
+            try {
+                await fetch('/api/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderDetails: {
+                            name: formData.name,
+                            phone: formData.phone,
+                            total: total
+                        }
+                    })
+                });
+            } catch (err) {
+                console.error("Notify Error", err);
             }
 
             // 3. Analytics & Pixels

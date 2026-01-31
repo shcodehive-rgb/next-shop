@@ -59,28 +59,22 @@ export default function CheckoutModal({ isOpen, onClose, product }: CheckoutModa
             }
 
             // 🚀 Send Telegram Notification
-            if (settings.telegramId) {
-                try {
-                    await fetch('/api/order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            orderData: {
-                                id: orderRef.key,
-                                customerName: formData.name,
-                                customerPhone: formData.phone,
-                                customerCity: formData.city,
-                                items: items, // Pass the whole items array
-                                total: total
-                            },
-                            merchantTelegramId: settings.telegramId
-                        })
-                    });
-                    console.log("Telegram notification sent!");
-                } catch (err) {
-                    console.error("Failed to send Telegram notification", err);
-                    // Don't block the user
-                }
+            try {
+                await fetch('/api/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderDetails: {
+                            name: formData.name,
+                            phone: formData.phone,
+                            total: total
+                        }
+                    })
+                });
+                console.log("Telegram notification sent!");
+            } catch (err) {
+                console.error("Failed to send Telegram notification", err);
+                // Don't block the user
             }
 
             // 3. Success UI
