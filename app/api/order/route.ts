@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase"; // تأكدي بلي مسار firebase صحيح
 import { doc, getDoc } from "firebase/firestore";
 
+// ✅ ديري هاد السطر فبلاصتو:
+export const revalidate = 3600;
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
