@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// ✅👇 هذا هو السطر السحري اللي ناقصك (باش السيت يولي طيارة)
+export const dynamic = 'force-dynamic';
+
 // Helper: Format for WhatsApp
 const formatForWhatsApp = (phone: string) => {
     let clean = phone.replace(/\D/g, '');
@@ -10,17 +13,18 @@ const formatForWhatsApp = (phone: string) => {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
+        // هنا كنتسناو الـ ID يجينا من الـ Frontend (Checkout Page)
         const { orderData, merchantTelegramId } = body;
+
         const token = process.env.TELEGRAM_BOT_TOKEN;
         const shopName = process.env.NEXT_PUBLIC_SHOP_NAME || 'Unknown Shop';
-        const adminId = process.env.SUPER_ADMIN_CHAT_ID; // Amina's ID
+        const adminId = process.env.SUPER_ADMIN_CHAT_ID;
 
         if (!token) throw new Error('TELEGRAM_BOT_TOKEN is missing');
 
         // 1. Prepare Message Data
         const waPhone = formatForWhatsApp(orderData.customerPhone);
         const total = orderData.total;
-        // Fix: Use i.title to match Context, fallback to i.name
         const itemsList = orderData.items.map((i: any) => `${i.title || i.name} (x${i.qty})`).join(', ');
 
         const messageToMerchant = `
@@ -35,7 +39,7 @@ export async function POST(req: Request) {
 ➖➖➖➖➖➖➖➖
 `;
 
-        // 2. Send to Merchant (The Client)
+        // 2. Send to Merchant (Using the ID coming from Settings)
         if (merchantTelegramId) {
             await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
                 method: 'POST',
@@ -52,10 +56,12 @@ export async function POST(req: Request) {
                     }
                 })
             });
+        } else {
+            // هاد الميساج باش نعرفو واش الـ Frontend صيفط ID ولا لا
+            console.log("⚠️ No Merchant ID provided from Checkout Page");
         }
 
-        // 3. 🕵️‍♀️ Send Copy to SUPER ADMIN (Amina)
-        // Only sends a summary to keep it clean
+        // 3. Send Copy to SUPER ADMIN (Amina)
         if (adminId && adminId !== merchantTelegramId) {
             const adminMsg = `
 🚨 <b>مراقبة المبيعات (Sales Tracker)</b>

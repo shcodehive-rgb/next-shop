@@ -12,6 +12,7 @@ interface CheckoutFormProps {
 }
 
 export default function CheckoutForm({ product }: CheckoutFormProps) {
+    // @ts-ignore
     const { settings } = useShop();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({ name: "", phone: "", city: "" });
@@ -32,7 +33,8 @@ export default function CheckoutForm({ product }: CheckoutFormProps) {
             dateLocal: new Date().toLocaleString(),
             status: "New",
             storeName: settings.storeName,
-            telegramId: settings.telegramId || "",
+            // @ts-ignore
+            telegramId: settings.telegramNotificationId || settings.telegramId || "",
             client: formData,
             items: items.map(i => `${i.title} (x${i.qty})`).join(", "),
             total: total,
@@ -45,7 +47,10 @@ export default function CheckoutForm({ product }: CheckoutFormProps) {
             await set(orderRef, orderData);
 
             // 2. Telegram Trigger
-            if (settings.telegramId) {
+            // @ts-ignore
+            const telegramTargetId = settings.telegramNotificationId || settings.telegramId;
+
+            if (telegramTargetId) {
                 try {
                     await fetch('/api/order', {
                         method: 'POST',
@@ -59,7 +64,8 @@ export default function CheckoutForm({ product }: CheckoutFormProps) {
                                 items: items,
                                 total: total
                             },
-                            merchantTelegramId: settings.telegramId
+                            // ✅✅✅ هذا هو التعديل المهم باش يخدم
+                            merchantTelegramId: telegramTargetId
                         })
                     });
                 } catch (err) {

@@ -6,6 +6,7 @@ import CategoryRail from "@/components/CategoryRail";
 import BestSellers from "@/components/BestSellers";
 import PromoBanner from "@/components/PromoBanner";
 import FeaturesBar from "@/components/FeaturesBar";
+import { ShopProvider } from "@/context/ShopContext";
 
 export default function HomePage() {
   const { settings, products, categories } = useShop();
