@@ -53,6 +53,7 @@ export interface CartItem extends Product {
 export interface SiteSettings {
     storeName: string;
     telegramId: string;
+    telegramBotToken: string;
     sheetUrl: string;
     heroImage: string;
     facebookPixelId?: string;
@@ -91,6 +92,7 @@ interface ShopContextType {
 const defaultSettings: SiteSettings = {
     storeName: "NEXT STORE",
     telegramId: "",
+    telegramBotToken: "",
     sheetUrl: "",
     heroImage: "https://placehold.co/600x400/10b981/ffffff?text=Welcome",
     primaryColor: "#10b981",

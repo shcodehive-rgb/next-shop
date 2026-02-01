@@ -57,6 +57,16 @@ export default function AdminSettings() {
                                 placeholder="ex: 12345678"
                             />
                         </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold text-gray-500 mb-1">توكن البوت (Telegram Bot Token)</label>
+                            <input
+                                value={settings.telegramBotToken || ""}
+                                onChange={(e) => updateSettings({ telegramBotToken: e.target.value })}
+                                className="w-full p-3 bg-gray-50 border rounded-xl font-mono text-sm"
+                                placeholder="ex: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+                            />
+                            <p className="text-xs text-gray-400 mt-1">يجب إنشاء بوت جديد عبر BotFather والحصول على هذا التوكن.</p>
+                        </div>
                     </div>
 
                     <hr className="border-gray-100" />

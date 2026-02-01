@@ -19,11 +19,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "إعدادات التيليغرام غير موجودة" }, { status: 500 });
         }
 
-        const { telegramChatId, telegramBotToken } = settingsSnap.data();
+        const { telegramId, telegramBotToken } = settingsSnap.data();
 
         // تأكد بلي الـ ID كاين
-        if (!telegramChatId || !telegramBotToken) {
-            return NextResponse.json({ error: "Telegram ID ناقص" }, { status: 400 });
+        if (!telegramId || !telegramBotToken) {
+            console.error("Missing Credentials:", { telegramId, telegramBotToken: telegramBotToken ? "HIDDEN" : "MISSING" });
+            return NextResponse.json({ error: "معلومات التيليغرام ناقصة (Telegram ID or Token)" }, { status: 400 });
         }
 
         // 2️⃣ صيفط الميساج لتيليغرام باستعمال المعلومات اللي جبنا
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                chat_id: telegramChatId, // ✅ هاهو الـ ID الديناميكي
+                chat_id: telegramId, // ✅ هاهو الـ ID الديناميكي
                 text: message,
             }),
         });
