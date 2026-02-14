@@ -4,93 +4,135 @@ import { useState } from "react";
 import { useShop, Category } from "@/context/ShopContext";
 import { toast } from "sonner";
 import { Plus, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import imageCompression from 'browser-image-compression';
-import { fileToBase64 } from "@/lib/utils";
+import { getProductTitle } from "@/lib/utils";
+import { useTranslations } from 'next-intl';
+import { translateText } from "@/lib/translateText";
 
 export default function AdminCategories() {
     const { categories, addCategory, deleteCategory } = useShop();
+    const [loading, setLoading] = useState(false);
+    const t = useTranslations('Admin');
+
     const [catName, setCatName] = useState("");
     const [catImage, setCatImage] = useState("");
-    const [catFile, setCatFile] = useState<File | null>(null);
-    const [uploadingCat, setUploadingCat] = useState(false);
 
     const handleCategorySubmit = async () => {
-        if (!catName) return toast.error("Name is required");
-        setUploadingCat(true);
-        try {
-            let imageBase64 = "https://placehold.co/100x100?text=No+Img";
-            if (catFile) {
-                const compressedFile = await imageCompression(catFile, {
-                    maxSizeMB: 0.3, maxWidthOrHeight: 1024, useWebWorker: true, initialQuality: 0.8
-                });
-                imageBase64 = await fileToBase64(compressedFile);
-            } else if (catImage && !catImage.startsWith("blob:")) {
-                imageBase64 = catImage;
-            }
+        if (!catName) return toast.error(t('error_required'));
 
-            const newCategory: Category = { id: Date.now().toString(), name: catName, image: imageBase64 };
+        setLoading(true);
+        try {
+            // Auto-translate category name
+            toast.info(t('translating'));
+            const translatedName = await translateText(catName);
+
+            const imageRef = catImage || "https://placehold.co/400?text=Category";
+            const newCategory: Category = { id: Date.now().toString(), name: translatedName, image: imageRef };
+
             addCategory(newCategory);
             await setDoc(doc(db, "categories", newCategory.id), newCategory);
-            toast.success("Category Added ✅");
-            setCatName(""); setCatImage(""); setCatFile(null);
-        } catch (e: any) {
+
+            toast.success(t('success_add'));
+            setCatName("");
+            setCatImage("");
+        } catch (e) {
             console.error(e);
-            toast.error("Error: " + e.message);
+            toast.error(t('error_generic'));
         } finally {
-            setUploadingCat(false);
+            setLoading(false);
         }
     };
 
-    const handleCatImageSelection = (file: File) => {
-        if (!file) return;
-        setCatFile(file);
-        setCatImage(URL.createObjectURL(file));
+    const handleImageUpload = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        setLoading(true);
+        try {
+            toast.info("Uploading...");
+            const file = files[0];
+            const compressed = await imageCompression(file, {
+                maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true, initialQuality: 0.8
+            });
+
+            // Upload to Storage
+            const filename = `categories/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+            const storageRef = ref(storage, filename);
+            const snapshot = await uploadBytes(storageRef, compressed);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            setCatImage(downloadURL);
+            toast.success("Image Uploaded");
+        } catch (e) {
+            console.error(e);
+            toast.error("Error uploading image");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <section className="bg-white p-6 rounded-3xl shadow-sm border space-y-4">
                 <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
-                    📂 إدارة التصنيفات
+                    📂 {t('manage_categories')}
                 </h3>
                 <div className="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-2xl border">
                     <div className="flex-1 w-full">
-                        <label className="block text-xs font-bold text-gray-500 mb-1">اسم التصنيف</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1">
+                            {t('category_name')}
+                            <span className="text-emerald-600 ml-2">✨ {t('auto_translate_hint')}</span>
+                        </label>
                         <input
                             value={catName}
                             onChange={e => setCatName(e.target.value)}
-                            className="w-full p-2 border rounded-lg h-12 font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
-                            placeholder="مثال: إلكترونيات"
+                            className="w-full p-3 bg-gradient-to-r from-emerald-50 to-blue-50 border-2 border-emerald-200 rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
+                            placeholder={t('product_name_placeholder')}
+                            dir="auto"
                         />
                     </div>
-                    <div className="flex-1 w-full">
-                        <label className="block text-xs font-bold text-gray-500 mb-1">صورة التصنيف</label>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-white border flex-shrink-0 overflow-hidden flex items-center justify-center text-gray-300">
-                                {catImage ? <img src={catImage} className="w-full h-full object-cover" /> : <ImageIcon className="w-6 h-6" />}
-                            </div>
-                            <label className="flex-1 h-12 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition gap-2 text-gray-500 font-bold text-xs relative overflow-hidden">
-                                <span>{uploadingCat ? "جاري..." : "اختر صورة"}</span>
-                                <input type="file" accept="image/*" onChange={e => e.target.files?.[0] && handleCatImageSelection(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" disabled={uploadingCat} />
-                            </label>
+
+                    <div className="w-32">
+                        <label className="block text-xs font-bold text-gray-500 mb-1">{t('category_image')}</label>
+                        <div className="h-12 w-full bg-white border border-dashed border-gray-300 rounded-lg flex items-center justify-center relative hover:bg-emerald-50 cursor-pointer overflow-hidden group">
+                            {catImage ? (
+                                <img src={catImage} className="w-full h-full object-cover" />
+                            ) : (
+                                <ImageIcon className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition" />
+                            )}
+                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleImageUpload(e.target.files)} />
                         </div>
                     </div>
-                    <button onClick={handleCategorySubmit} disabled={uploadingCat} className="bg-gray-900 text-white px-6 py-2 rounded-xl font-bold hover:bg-black transition text-sm h-12 w-full md:w-auto flex items-center justify-center shrink-0">
-                        {uploadingCat ? <Loader2 className="animate-spin" /> : <Plus className="w-5 h-5" />}
+
+                    <button
+                        onClick={handleCategorySubmit}
+                        disabled={loading}
+                        className="h-12 px-6 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition shadow-lg flex items-center gap-2"
+                    >
+                        {loading ? t('processing') : <><Plus className="w-5 h-5" /> {t('add_category')}</>}
                     </button>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                    {categories.map(c => (
-                        <div key={c.id} className="flex items-center gap-2 bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-full border border-emerald-100 shadow-sm animate-in zoom-in duration-300">
-                            <span className="font-bold text-xs">{c.name}</span>
-                            <button onClick={() => { if (confirm('Delete category?')) deleteCategory(c.id) }} className="text-red-400 hover:text-red-600 bg-white rounded-full p-0.5 transition"><Trash2 className="w-3 h-3" /></button>
-                        </div>
-                    ))}
-                    {categories.length === 0 && <span className="text-gray-400 text-sm italic">لا توجد تصنيفات بعد.</span>}
-                </div>
             </section>
+
+            {/* Existing Categories */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {categories.map(cat => (
+                    <div key={cat.id} className="relative group bg-white p-3 rounded-2xl border hover:shadow-md transition text-center">
+                        <img src={cat.image} className="w-16 h-16 mx-auto rounded-full object-cover bg-gray-100 mb-2 border-2 border-white shadow-sm" />
+                        <h4 className="font-bold text-gray-800 text-sm">
+                            {getProductTitle(cat.name)}
+                        </h4>
+                        <button
+                            onClick={() => { if (confirm(t('delete_confirm'))) deleteCategory(cat.id); }}
+                            className="absolute -top-1 -right-1 bg-red-100/90 backdrop-blur text-red-600 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition shadow-sm hover:bg-red-200"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                ))}
+                {categories.length === 0 && <span className="text-gray-400 text-sm italic col-span-full text-center py-4">{t('no_categories_yet')}</span>}
+            </div>
         </div>
     );
 }

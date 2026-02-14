@@ -1,23 +1,26 @@
 "use client";
 import React from 'react';
 import { Truck, ShieldCheck, Wallet } from 'lucide-react';
+import { useTranslations } from "next-intl";
 
 export default function FeaturesBar() {
+    const t = useTranslations('Features');
+
     const features = [
         {
             icon: <Truck className="w-10 h-10 text-emerald-600" />,
-            title: "توصيل سريع",
-            desc: "توصيل لجميع المدن المغربية في وقت قياسي"
+            title: t('fast_delivery'),
+            desc: t('fast_delivery_desc')
         },
         {
             icon: <Wallet className="w-10 h-10 text-emerald-600" />,
-            title: "دفع عند الاستلام",
-            desc: "لا تؤدي الثمن حتى تتوصل بطلبيتك وتقلبها"
+            title: t('cod'),
+            desc: t('cod_desc')
         },
         {
             icon: <ShieldCheck className="w-10 h-10 text-emerald-600" />,
-            title: "ضمان الجودة",
-            desc: "منتجات مختارة بعناية وتطابق الصور 100%"
+            title: t('quality'),
+            desc: t('quality_desc')
         }
     ];
 

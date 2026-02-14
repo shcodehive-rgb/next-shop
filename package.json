@@ -13,8 +13,10 @@
     "firebase": "^12.8.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "next-intl": "^4.8.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-quill-new": "^3.7.0",
     "sonner": "^2.0.7",
     "sweetalert2": "^11.26.17"
   },

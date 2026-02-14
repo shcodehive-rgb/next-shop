@@ -8,7 +8,22 @@ export const revalidate = 3600;
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { orderDetails } = body; // المعلومات ديال الطلبية
+        console.log("📥 Received API Payload:", JSON.stringify(body, null, 2)); // DEBUG PAYLOAD
+
+        const { orderDetails, message: customMessage } = body;
+
+        let message = "";
+
+        if (customMessage) {
+            // Case A: Client sent a ready-to-send message (e.g. ProductModal)
+            message = customMessage;
+        } else if (orderDetails) {
+            // Case B: Client sent details, we build the message (e.g. CheckoutModal)
+            message = `📦 طلبية جديدة!\n\n👤 السمية: ${orderDetails.name}\n📱 التيليفون: ${orderDetails.phone}\n💰 المجموع: ${orderDetails.total} DH\n🏙️ المدينة: ${orderDetails.city}\n🏠 العنوان: ${orderDetails.client?.address || 'N/A'}`;
+        } else {
+            console.error("❌ Missing payload info");
+            return NextResponse.json({ error: "Invalid Data" }, { status: 400 });
+        }
 
         // 1️⃣ جيب الـ Chat ID من Firebase (ماشي من Vercel)
         // هنا كنقولو للسيستيم: سير لـ settings وجيب ليا الوثيقة general
@@ -21,25 +36,42 @@ export async function POST(req: Request) {
 
         const { telegramId, telegramBotToken } = settingsSnap.data();
 
+        // DEBUG: See what is actually in the DB
+        console.log("🔍 DB Settings Dump:", JSON.stringify(settingsSnap.data(), null, 2));
+
+        // تأكد بلي الـ ID كاين
         // تأكد بلي الـ ID كاين
         if (!telegramId || !telegramBotToken) {
-            console.error("Missing Credentials:", { telegramId, telegramBotToken: telegramBotToken ? "HIDDEN" : "MISSING" });
-            return NextResponse.json({ error: "معلومات التيليغرام ناقصة (Telegram ID or Token)" }, { status: 400 });
+            console.warn("Notification Skipped: Store owner has not configured Telegram ID/Token");
+            // Graceful exit: Return 200 so the client doesn't see a red error
+            return NextResponse.json({ success: true, warning: "Store owner has not configured Telegram ID" });
         }
 
         // 2️⃣ صيفط الميساج لتيليغرام باستعمال المعلومات اللي جبنا
-        const message = `📦 طلبية جديدة!\n\n👤 السمية: ${orderDetails.name}\n📱 التيليفون: ${orderDetails.phone}\n💰 المجموع: ${orderDetails.total} DH`;
+        // const message = ... (Already built above)
+
+        // DEBUG: Log what we are using (Masked for safety)
+        console.log(`🚀 Attempting to send to Telegram. ID: ${telegramId}, Token: ${telegramBotToken.substring(0, 10)}...`);
 
         const telegramUrl = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
 
-        await fetch(telegramUrl, {
+        const telegramRes = await fetch(telegramUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                chat_id: telegramId, // ✅ هاهو الـ ID الديناميكي
+                chat_id: telegramId,
                 text: message,
+                parse_mode: "HTML",
             }),
         });
+
+        if (!telegramRes.ok) {
+            const telegramError = await telegramRes.json();
+            console.error("❌ Telegram API Error:", telegramError);
+            // Don't fail the order, just log the error
+        } else {
+            console.log("✅ Telegram Notification Sent Successfully!");
+        }
 
         return NextResponse.json({ success: true });
 

@@ -5,6 +5,7 @@ import { Product, useShop } from "@/context/ShopContext";
 // Wait, I don't have shadcn installed. I'll use a custom fixed div like CheckoutModal.
 import { X, CheckCircle, Loader2, Minus, Plus, ShoppingCart } from "lucide-react";
 import Swal from "sweetalert2";
+import { getProductTitle } from "@/lib/utils";
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -49,12 +50,13 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         try {
             const message = `
 <b>New Order! 🔔</b>
-<b>Product:</b> ${product.title}
+<b>Product:</b> ${getProductTitle(product.title)}
 <b>Qty:</b> ${qty} ${isWholesaleActive ? '(Wholesale)' : ''}
 <b>Price:</b> ${unitPrice} DH (Total: ${totalPrice})
 <b>Client:</b> ${formData.name}
 <b>Phone:</b> ${formData.phone}
 <b>City:</b> ${formData.city}
+<b>Address:</b> ${(formData as any).address || 'N/A'}
       `;
 
             await fetch('/api/order', {
@@ -143,7 +145,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col bg-white">
 
                     <div className="mb-6">
-                        <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">{product.title}</h2>
+                        <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">{getProductTitle(product.title)}</h2>
                         <div className="flex items-center gap-3 flex-wrap">
                             <span className="text-3xl font-black" style={{ color: settings.primaryColor || '#059669' }}>{totalPrice} DH</span>
                             {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
@@ -190,7 +192,8 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                         <div className="space-y-3">
                             <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="الاسم الكامل" className="w-full p-3 bg-gray-50 border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
                             <input required type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="رقم الهاتف" className="w-full p-3 bg-gray-50 border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
-                            <input value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="المدينة" className="w-full p-3 bg-gray-50 border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
+                            <input required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="المدينة" className="w-full p-3 bg-gray-50 border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
+                            <input value={(formData as any).address || ""} onChange={e => setFormData({ ...formData, address: e.target.value } as any)} placeholder="العنوان (اختياري)" className="w-full p-3 bg-gray-50 border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
                         </div>
 
                         <button
@@ -198,7 +201,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                             style={{ backgroundColor: settings.primaryColor || '#10b981' }}
                             className="w-full text-white py-4 rounded-xl font-black text-lg shadow-lg hover:brightness-90 transition flex justify-center gap-2 items-center"
                         >
-                            {loading ? <Loader2 className="animate-spin" /> : <><span>اطلب الآن</span> <CheckCircle className="w-5 h-5" /></>}
+                            {loading ? <Loader2 className="animate-spin" /> : <><span>أكد الطلب</span> <CheckCircle className="w-5 h-5" /></>}
                         </button>
                     </form>
 

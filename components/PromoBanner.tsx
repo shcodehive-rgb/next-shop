@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface PromoBannerProps {
     image: string;
@@ -7,6 +8,8 @@ interface PromoBannerProps {
 }
 
 export default function PromoBanner({ image, link }: PromoBannerProps) {
+    const t = useTranslations('PromoBanner');
+
     if (!image) return null;
 
     return (
@@ -21,7 +24,7 @@ export default function PromoBanner({ image, link }: PromoBannerProps) {
 
                 {/* Call to Action Overlay (Optional) */}
                 <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8 bg-white/90 backdrop-blur-sm px-6 py-2 rounded-full flex items-center gap-2 text-gray-900 font-bold shadow-lg transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition duration-300">
-                    تسوق الآن <ArrowRight className="w-4 h-4" />
+                    {t('shop_now')} <ArrowRight className="w-4 h-4" />
                 </div>
             </Link>
         </div>

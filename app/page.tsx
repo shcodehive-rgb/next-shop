@@ -1,48 +1,39 @@
-"use client";
+import { redirect } from 'next/navigation';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
 
-export const revalidate = 3600;
+// 🛑 SERVER-SIDE LOGIC FOR ROOT REDIRECT
+// We use Firebase Admin SDK (if possible) or Client SDK on server? 
+// Edge/Node runtime issues might occur with Client SDK on Server Components sometimes.
+// Ideally, we just use the Client Code but in a Server Component.
 
-import { useShop, Product } from "@/context/ShopContext";
-import HeroBanner from "@/components/HeroBanner";
-import CategoryRail from "@/components/CategoryRail";
-import BestSellers from "@/components/BestSellers";
-import PromoBanner from "@/components/PromoBanner";
-import FeaturesBar from "@/components/FeaturesBar";
-import { ShopProvider } from "@/context/ShopContext";
+// Let's stick to the Client SDK which works in Next.js Server Components usually
+// BUT better safe: we can just hardcode default for now OR try reading.
+// Wait, initializing simple firebase app in server component is fine.
 
-export default function HomePage() {
-  const { settings, products, categories } = useShop();
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
-  // Filter Best Sellers
-  const bestSellers = products.filter(p => p.isBestSeller);
+export default async function RootPage() {
+  // 1. Default Fallback
+  let defaultLocale = 'ar';
 
-  return (
-    <div className="min-h-screen bg-white pb-20 font-tajawal">
+  try {
+    // 2. Try fetching from Firestore
+    // Note: getDoc on Server Component works if environment is Node.js
+    const settingsRef = doc(db, "settings", "general");
+    const snap = await getDoc(settingsRef);
 
-      {/* 1. TOP BANNER */}
-      {settings.heroImage && <HeroBanner image={settings.heroImage} />}
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.default_locale) {
+        defaultLocale = data.default_locale;
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching default locale:", error);
+  }
 
-      {/* 2. CIRCULAR CATEGORIES */}
-      <div className="container mx-auto px-4 my-6">
-        <CategoryRail
-          categories={categories}
-        />
-      </div>
-
-      {/* 3. BEST SELLERS SLIDER (Only if exists) */}
-      <BestSellers products={bestSellers} />
-
-      {/* 4. MIDDLE PROMO BANNER */}
-      {settings.middleBanner && (
-        <PromoBanner
-          image={settings.middleBanner}
-          link={settings.middleBannerLink || "#products"}
-        />
-      )}
-
-      {/* 5. FEATURES BAR (Trust Signals) */}
-      {settings.showFeatures !== false && <FeaturesBar />}
-
-    </div>
-  );
+  // 3. Redirect
+  redirect(`/${defaultLocale}`);
 }

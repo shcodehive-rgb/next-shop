@@ -2,10 +2,11 @@
 
 import { use, useState, useEffect } from "react";
 import { useShop, Product } from "@/context/ShopContext";
-import { ArrowRight, Minus, Plus, ShoppingCart, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowRight, Minus, Plus, ShoppingCart, CheckCircle, Loader2, Star } from "lucide-react";
 import Link from "next/link";
 import Swal from "sweetalert2";
 import { toast } from "sonner";
+import { db } from "@/lib/firebase";
 
 interface ProductPageProps {
     params: Promise<{ id: string }>;
@@ -50,6 +51,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 <b>Client:</b> ${formData.name}
 <b>Phone:</b> ${formData.phone}
 <b>City:</b> ${formData.city}
+<b>Address:</b> ${(formData as any).address || 'N/A'}
             `;
 
             await fetch('/api/order', {
@@ -150,6 +152,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                                 <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="الاسم الكامل" className="w-full p-3 bg-white border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
                                 <input required type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="رقم الهاتف" className="w-full p-3 bg-white border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
                                 <input value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="المدينة" className="w-full p-3 bg-white border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
+                                <input required value={(formData as any).address || ""} onChange={e => setFormData({ ...formData, address: e.target.value } as any)} placeholder="العنوان (ضروري)" className="w-full p-3 bg-white border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" />
                             </div>
                             <button
                                 disabled={loading}
@@ -176,6 +179,45 @@ export default function ProductPage({ params }: ProductPageProps) {
                     </div>
                 </div>
             </div>
+
+            {/* Reviews Section Removed - Moved to Homepage */}
+
+            {/* RELATED PRODUCTS SECTION */}
+            {products.filter(p => p.category === product.category && p.id !== product.id).length > 0 && (
+                <div className="container mx-auto px-4 mt-12">
+                    <h3 className="font-bold text-2xl text-gray-900 mb-6 flex items-center gap-2">
+                        منتجات قد تعجبك also ✨
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {products
+                            .filter(p => p.category === product.category && p.id !== product.id)
+                            .slice(0, 4)
+                            .map(p => (
+                                <Link href={`/product/${p.id}`} key={p.id} className="group bg-white p-3 rounded-2xl border border-gray-100 hover:shadow-lg transition-all duration-300 block">
+                                    <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 relative">
+                                        <img
+                                            src={p.image}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            alt={p.title}
+                                        />
+                                        {p.discountLabel && (
+                                            <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                                {p.discountLabel}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <h4 className="font-bold text-gray-800 text-sm truncate mb-1">{p.title}</h4>
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-black text-emerald-600">{p.price} DH</span>
+                                        <span className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                            <ArrowRight className="w-4 h-4 -rotate-45" />
+                                        </span>
+                                    </div>
+                                </Link>
+                            ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

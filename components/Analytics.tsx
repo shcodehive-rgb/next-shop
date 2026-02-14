@@ -10,8 +10,11 @@ export default function Analytics() {
 
     // 1. Facebook Pixel Injection
     useEffect(() => {
-        if (settings.facebookPixelId) {
-            console.log("🟢 Facebook Pixel Initialized:", settings.facebookPixelId);
+        // Initialize Main Pixel
+        if (settings.facebookPixelId || settings.facebookPixelBackup1 || settings.facebookPixelBackup2) {
+            console.log("🟢 Initializing Facebook Pixels...");
+
+            // Base Code
             // @ts-ignore
             !function (f: any, b: any, e: any, v: any, n: any, t: any, s: any) {
                 if (f.fbq) return; n = f.fbq = function () {
@@ -25,8 +28,26 @@ export default function Analytics() {
             }(window as any, document, 'script',
                 'https://connect.facebook.net/en_US/fbevents.js');
 
-            // @ts-ignore
-            window.fbq('init', settings.facebookPixelId);
+            // Init Main
+            if (settings.facebookPixelId) {
+                // @ts-ignore
+                window.fbq('init', settings.facebookPixelId);
+                console.log("  - Main:", settings.facebookPixelId);
+            }
+            // Init Backup 1
+            if (settings.facebookPixelBackup1) {
+                // @ts-ignore
+                window.fbq('init', settings.facebookPixelBackup1);
+                console.log("  - Backup 1:", settings.facebookPixelBackup1);
+            }
+            // Init Backup 2
+            if (settings.facebookPixelBackup2) {
+                // @ts-ignore
+                window.fbq('init', settings.facebookPixelBackup2);
+                console.log("  - Backup 2:", settings.facebookPixelBackup2);
+            }
+
+            // Track PageView (sent to ALL initialized pixels)
             // @ts-ignore
             window.fbq('track', 'PageView');
         }

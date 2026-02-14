@@ -3,19 +3,23 @@ import React from 'react';
 import { Category } from "@/context/ShopContext";
 import Link from 'next/link';
 import { ShopProvider } from "@/context/ShopContext";
+import { useTranslations, useLocale } from "next-intl";
 
 interface CategoryRailProps {
     categories: Category[];
 }
 
 export default function CategoryRail({ categories }: CategoryRailProps) {
+    const t = useTranslations('CategoryRail');
+    const locale = useLocale();
+
     return (
         <div className="py-4 bg-white">
 
             {/* Title Section */}
             <div className="text-center mb-8">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-wide">
-                    تسوق حسب الفئة
+                    {t('title')}
                 </h2>
                 <div className="w-16 h-1 bg-emerald-600 mx-auto mt-2 rounded-full"></div>
             </div>
@@ -24,27 +28,37 @@ export default function CategoryRail({ categories }: CategoryRailProps) {
             <div className="container mx-auto px-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
 
-                    {categories.map((cat) => (
-                        <Link
-                            key={cat.id}
-                            href={`/collection/${cat.id}`}
-                            className="flex flex-col items-center group w-full p-2"
-                        >
-                            {/* BIGGER CIRCLE CONTAINER - Responsive sizing */}
-                            <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-56 lg:h-56 rounded-full overflow-hidden border-[3px] border-gray-100 transition-all duration-300 shadow-sm group-hover:border-emerald-500 group-hover:shadow-xl group-hover:scale-105">
-                                <img
-                                    src={cat.image}
-                                    alt={cat.name}
-                                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                                />
-                            </div>
+                    {categories.map((cat) => {
+                        // Dynamic Name Translation Logic with Robust Fallback
+                        let displayName = "Category";
+                        if (typeof cat.name === 'object' && cat.name !== null) {
+                            displayName = (cat.name as any)[locale] || (cat.name as any)['ar'] || (cat.name as any)['en'] || (cat.name as any)['fr'] || "Category";
+                        } else {
+                            displayName = String(cat.name);
+                        }
 
-                            {/* TEXT CLOSER TO CIRCLE */}
-                            <span className="mt-3 font-bold text-sm md:text-lg text-gray-800 group-hover:text-emerald-600 transition-colors uppercase tracking-wide text-center">
-                                {cat.name}
-                            </span>
-                        </Link>
-                    ))}
+                        return (
+                            <Link
+                                key={cat.id}
+                                href={`/${locale}/collection/${cat.id}`}
+                                className="flex flex-col items-center group w-full p-2"
+                            >
+                                {/* BIGGER CIRCLE CONTAINER - Responsive sizing */}
+                                <div className="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-56 lg:h-56 rounded-full overflow-hidden border-[3px] border-gray-100 transition-all duration-300 shadow-sm group-hover:border-emerald-500 group-hover:shadow-xl group-hover:scale-105">
+                                    <img
+                                        src={cat.image}
+                                        alt={displayName}
+                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                                    />
+                                </div>
+
+                                {/* TEXT CLOSER TO CIRCLE */}
+                                <span className="mt-3 font-bold text-sm md:text-lg text-gray-800 group-hover:text-emerald-600 transition-colors uppercase tracking-wide text-center">
+                                    {displayName}
+                                </span>
+                            </Link>
+                        )
+                    })}
 
                     {/* Empty State */}
                     {categories.length === 0 && (

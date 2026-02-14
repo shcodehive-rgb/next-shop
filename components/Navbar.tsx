@@ -6,12 +6,15 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Swal from "sweetalert2";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Navbar({ onOpenCart }: { onOpenCart: () => void }) {
     const { settings, cart, searchQuery, setSearchQuery } = useShop();
     const router = useRouter();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const t = useTranslations('Navbar');
 
     const handleAdminLogin = async () => {
         const { value: pin } = await Swal.fire({
@@ -39,9 +42,9 @@ export default function Navbar({ onOpenCart }: { onOpenCart: () => void }) {
     }, [isSearchOpen]);
 
     return (
-        <header className="w-full bg-white shadow-sm sticky top-0 z-50">
+        <header className="w-full bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                
+
                 {/* Left Side: Menu & Logo */}
                 <div className="flex items-center gap-4">
                     <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-full md:hidden">
@@ -55,22 +58,25 @@ export default function Navbar({ onOpenCart }: { onOpenCart: () => void }) {
                 {/* Center: Search Bar (Hidden on mobile) */}
                 <div className="hidden md:flex flex-1 max-w-md mx-8">
                     <div className="relative w-full">
-                        <input 
-                            type="text" 
-                            placeholder="ابحث عن منتج..." 
+                        <input
+                            type="text"
+                            placeholder={t('search_placeholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-right text-sm"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                         />
-                        <Search className="w-5 h-5 text-gray-400 absolute right-3 top-2.5" />
+                        <Search className="w-5 h-5 text-gray-400 absolute ltr:right-3 rtl:left-3 top-2.5" />
                     </div>
                 </div>
 
                 {/* Right Side: Icons */}
                 <div className="flex items-center gap-3">
-                    
+
+                    {/* Language Switcher */}
+                    <LanguageSwitcher />
+
                     {/* Mobile Search */}
-                    <button 
+                    <button
                         onClick={() => setIsSearchOpen(!isSearchOpen)}
                         className="md:hidden p-2 text-gray-600 hover:bg-gray-50 rounded-full"
                     >
@@ -78,10 +84,10 @@ export default function Navbar({ onOpenCart }: { onOpenCart: () => void }) {
                     </button>
 
                     {/* Admin Lock */}
-                    <button 
+                    <button
                         onClick={handleAdminLogin}
                         className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-full transition"
-                        title="Admin"
+                        title={t('admin')}
                     >
                         <Lock className="w-5 h-5" />
                     </button>
@@ -90,7 +96,7 @@ export default function Navbar({ onOpenCart }: { onOpenCart: () => void }) {
                     <button
                         onClick={onOpenCart}
                         className="relative p-2 text-gray-600 hover:text-emerald-600 transition-colors"
-                        title="Cart"
+                        title={t('cart')}
                     >
                         <ShoppingCart className="w-5 h-5" />
                         {cart.length > 0 && (
@@ -105,13 +111,13 @@ export default function Navbar({ onOpenCart }: { onOpenCart: () => void }) {
             {/* Mobile Search Bar */}
             {isSearchOpen && (
                 <div className="md:hidden border-t border-gray-100 bg-gray-50 px-4 py-3">
-                    <input 
+                    <input
                         ref={inputRef}
-                        type="text" 
-                        placeholder="ابحث عن منتج..." 
+                        type="text"
+                        placeholder={t('search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-right text-sm"
+                        className="w-full bg-white border border-gray-200 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                     />
                 </div>
             )}

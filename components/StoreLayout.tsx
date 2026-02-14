@@ -6,6 +6,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CheckoutModal from "@/components/shop/CheckoutModal";
 
+import TopAnnouncement from "@/components/TopAnnouncement";
+
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isAdmin = pathname.startsWith("/admin");
@@ -19,6 +21,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
     // Store Layout (Sticky Footer)
     return (
         <div className="min-h-screen flex flex-col">
+            <TopAnnouncement />
             <Navbar onOpenCart={() => setIsCartOpen(true)} />
             <main className="flex-grow flex flex-col">
                 {children}

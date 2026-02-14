@@ -38,12 +38,32 @@ export interface Product {
     isBestSeller?: boolean;
     originalPrice?: number;
     discountLabel?: string;
+    shipping_type?: 'free' | 'standard'; // Free shipping or standard city rate
+    visible?: boolean;
+}
+
+export interface Customer {
+    id: string; // Phone number
+    name: string;
+    phone: string;
+    city: string;
+    totalSpent: number;
+    ordersCount: number;
+    interests: string[]; // Categories they bought from
+    lastOrder: string;
 }
 
 export interface Category {
     id: string;
     name: string;
     image: string;
+}
+
+export interface ShippingRate {
+    id: string;
+    city: string;
+    price: number;
+    isDefault: boolean;
 }
 
 export interface CartItem extends Product {
@@ -58,6 +78,10 @@ export interface SiteSettings {
     heroImage: string;
     facebookPixelId?: string;
     tiktokPixelId?: string;
+    facebookPixelBackup1?: string;
+    facebookPixelBackup2?: string;
+    facebookAccessToken?: string;
+    announcements?: string[];
     favicon?: string;
     primaryColor?: string;
     phoneNumber?: string;
@@ -65,27 +89,16 @@ export interface SiteSettings {
     middleBanner?: string;
     middleBannerLink?: string;
     showFeatures?: boolean;
+    default_locale?: string;
+    shippingMode?: 'free' | 'custom';
 }
 
 interface ShopContextType {
     products: Product[];
     categories: Category[];
-    cart: CartItem[];
-    settings: SiteSettings;
-    addProduct: (p: Product) => void;
-    updateProduct: (id: string, p: Partial<Product>) => void;
-    deleteProduct: (id: string) => void;
-    addCategory: (c: Category) => void;
-    deleteCategory: (id: string) => void;
-    addToCart: (p: Product, qty?: number) => void;
-    removeFromCart: (id: string) => void;
-    updateCartQty: (id: string, qty: number) => void;
-    clearCart: () => void;
-    updateSettings: (s: Partial<SiteSettings>) => void;
-    searchQuery: string;
-    setSearchQuery: (q: string) => void;
-    filteredProducts: Product[];
-    isStoreActive: boolean;
+    customers: Customer[];
+    cart: CartItem[]; // <--- New
+    // ... existing properties ...
 }
 
 // --- DEFAULTS ---
@@ -97,6 +110,7 @@ const defaultSettings: SiteSettings = {
     heroImage: "https://placehold.co/600x400/10b981/ffffff?text=Welcome",
     primaryColor: "#10b981",
     showFeatures: true,
+    shippingMode: 'free',
 };
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -104,15 +118,19 @@ const ShopContext = createContext<ShopContextType | undefined>(undefined);
 export function ShopProvider({ children }: { children: ReactNode }) {
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [customers, setCustomers] = useState<Customer[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+    const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [isStoreActive, setIsStoreActive] = useState(true);
 
-    // 🔥 1. REAL-TIME DATA SYNC (The Fix)
+
+
+    // 🔥 1. REAL-TIME DATA SYNC
     useEffect(() => {
-        // A. Listen to Products (Real-time from Firebase)
-        const unsubProducts = onSnapshot(collection(db, "demo_chima"), (snapshot) => {
+        // A. Listen to Products
+        const unsubProducts = onSnapshot(collection(db, "products"), (snapshot) => {
             const productList = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -122,7 +140,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             console.error("Error fetching products:", error);
         });
 
-        // B. Listen to Categories (Real-time from Firebase)
+        // B. Listen to Categories
         const unsubCategories = onSnapshot(collection(db, "categories"), (snapshot) => {
             const categoryList = snapshot.docs.map(doc => ({
                 id: doc.id,
@@ -133,7 +151,29 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             console.error("Error fetching categories:", error);
         });
 
-        // C. Listen to Settings (Real-time)
+        // C. Listen to Customers
+        const unsubCustomers = onSnapshot(collection(db, "customers"), (snapshot) => {
+            const customerList = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Customer[];
+            setCustomers(customerList);
+        }, (error) => {
+            console.error("Error fetching customers:", error);
+        });
+
+        // D. Listen to Shipping Rates
+        const unsubShipping = onSnapshot(collection(db, "shipping_rates"), (snapshot) => {
+            const ratesList = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as ShippingRate[];
+            setShippingRates(ratesList);
+        }, (error) => {
+            console.error("Error fetching shipping rates:", error);
+        });
+
+        // E. Listen to Settings
         const unsubSettings = onSnapshot(doc(db, "settings", "general"), (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data() as any;
@@ -143,23 +183,57 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 if (data.storeStatus === 'suspended') {
                     setIsStoreActive(false);
                 } else {
-                    // Simple logic: if not suspended, it's active
                     setIsStoreActive(true);
                 }
             }
         });
 
-        // D. Load Cart from LocalStorage (Cart should remain local)
+        // F. Load Cart from LocalStorage & Hydrate with Real-time Data
         const localCart = localStorage.getItem("cart");
-        if (localCart) setCart(JSON.parse(localCart));
+        if (localCart) {
+            try {
+                let parsedCart: CartItem[] = JSON.parse(localCart);
 
-        // Cleanup listeners on unmount
+                // Hydrate: Fill in missing images/details from the live 'products' list (if available yet)
+                // Note: 'products' in this scope might be empty initially. 
+                // So we should also trigger hydration when 'products' updates.
+
+                // For now, just set what we have. A separate effect can listen to [products] and update cart details if needed.
+                // Or better: We rely on the fact that we rendered with what we had. 
+
+                setCart(parsedCart);
+            } catch (e) {
+                console.error("Error parsing cart", e);
+            }
+        }
+
+        // Cleanup
         return () => {
             unsubProducts();
             unsubCategories();
+            unsubCustomers();
+            unsubShipping();
             unsubSettings();
         };
     }, []);
+
+    // Effect to Hydrate Cart Images when Products Load
+    useEffect(() => {
+        if (products.length > 0 && cart.length > 0) {
+            // Check if any cart item is missing its image (because we stripped it)
+            const needsHydration = cart.some(item => !item.image || item.image === "");
+
+            if (needsHydration) {
+                setCart(prevCart => prevCart.map(item => {
+                    const product = products.find(p => p.id === item.id);
+                    if (product) {
+                        return { ...item, image: product.image, images: product.images };
+                    }
+                    return item;
+                }));
+            }
+        }
+    }, [products]); // Run when products are fetched
 
     // --- ACTIONS WITH FIREBASE SYNC ---
 
@@ -218,7 +292,28 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // --- CART (Local Only) ---
+    // Helper to save cart to local storage (stripping large data)
+    const saveCartToLocal = (cartItems: CartItem[]) => {
+        try {
+            const minimizedCart = cartItems.map(item => ({
+                id: item.id,
+                qty: item.qty,
+                title: item.title,
+                price: item.price,
+                // Keep only essential fields. Remove images.
+                // If we need images in cart, we should rely on the main products list to hydrate them 
+                // or keep only a small thumbnail if it's a URL (not base64).
+                // For now, let's keep the main image if it's short, otherwise drop it.
+                image: item.image?.length > 1000 ? "" : item.image,
+                // We definitely don't want the full images array if they are base64
+                // options: item.options // if we had options
+            }));
+            localStorage.setItem("cart", JSON.stringify(minimizedCart));
+        } catch (e) {
+            console.error("Local Storage Quota Exceeded", e);
+        }
+    };
+
     const addToCart = (p: Product, qty = 1) => {
         setCart((prev) => {
             const existing = prev.find((i) => i.id === p.id);
@@ -228,7 +323,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             } else {
                 newCart = [...prev, { ...p, qty }];
             }
-            localStorage.setItem("cart", JSON.stringify(newCart));
+            saveCartToLocal(newCart);
             return newCart;
         });
     };
@@ -236,7 +331,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const removeFromCart = (id: string) => {
         setCart((prev) => {
             const newCart = prev.filter((i) => i.id !== id);
-            localStorage.setItem("cart", JSON.stringify(newCart));
+            saveCartToLocal(newCart);
             return newCart;
         });
     };
@@ -245,7 +340,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         if (qty < 1) return removeFromCart(id);
         setCart((prev) => {
             const newCart = prev.map((i) => (i.id === id ? { ...i, qty } : i));
-            localStorage.setItem("cart", JSON.stringify(newCart));
+            saveCartToLocal(newCart);
             return newCart;
         });
     };
@@ -255,19 +350,73 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("cart");
     };
 
+    // --- SHIPPING RATES ---
+    const addShippingRate = async (rate: ShippingRate) => {
+        try {
+            await setDoc(doc(db, "shipping_rates", rate.id), rate);
+        } catch (e) {
+            console.error("Error adding shipping rate", e);
+        }
+    };
+
+    const updateShippingRate = async (id: string, rate: Partial<ShippingRate>) => {
+        try {
+            await updateDoc(doc(db, "shipping_rates", id), rate);
+        } catch (e) {
+            console.error("Error updating shipping rate", e);
+        }
+    };
+
+    const deleteShippingRate = async (id: string) => {
+        try {
+            await deleteDoc(doc(db, "shipping_rates", id));
+        } catch (e) {
+            console.error("Error deleting shipping rate", e);
+        }
+    };
+
+    const getShippingCost = (city: string): number => {
+        if (!city) return 0;
+        const rate = shippingRates.find(r => r.city.toLowerCase() === city.toLowerCase());
+        if (rate) return rate.price;
+        // Return default rate if city not found
+        const defaultRate = shippingRates.find(r => r.isDefault);
+        return defaultRate ? defaultRate.price : 0;
+    };
+
     // --- SEARCH ---
-    const filteredProducts = products.filter(p =>
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredProducts = products.filter(p => {
+        const query = searchQuery.toLowerCase();
+
+        // Handle title - could be string or object {ar, en, fr}
+        let titleMatch = false;
+        if (typeof p.title === 'string') {
+            titleMatch = p.title.toLowerCase().includes(query);
+        } else if (typeof p.title === 'object' && p.title !== null) {
+            // Search in all language versions
+            const titleObj = p.title as any;
+            titleMatch = Object.values(titleObj).some(val =>
+                typeof val === 'string' && val.toLowerCase().includes(query)
+            );
+        }
+
+        // Handle category
+        const categoryMatch = typeof p.category === 'string'
+            ? p.category.toLowerCase().includes(query)
+            : false;
+
+        return titleMatch || categoryMatch;
+    });
 
     return (
         <ShopContext.Provider
             value={{
                 products,
                 categories,
+                customers,
                 cart,
                 settings,
+                shippingRates,
                 addProduct,
                 updateProduct,
                 deleteProduct,
@@ -278,6 +427,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 updateCartQty,
                 clearCart,
                 updateSettings,
+                addShippingRate,
+                updateShippingRate,
+                deleteShippingRate,
+                getShippingCost,
                 searchQuery,
                 setSearchQuery,
                 filteredProducts,
