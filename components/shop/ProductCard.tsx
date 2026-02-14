@@ -4,17 +4,18 @@ import Link from 'next/link';
 import { useTranslations, useLocale } from "next-intl";
 
 import { useShop } from "@/context/ShopContext";
-import { Plus } from "lucide-react";
+import { Plus, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import Image from 'next/image';
 
 interface ProductCardProps {
   product: any;
   onClick?: (p: any) => void;
+  priority?: boolean;
 }
 
-export default function ProductCard({ product, onClick }: ProductCardProps) {
-  const { addToCart } = useShop();
+export default function ProductCard({ product, onClick, priority = false }: ProductCardProps) {
+  const { addToCart, openCart } = useShop();
   // Logic to calculate discount
   const price = Number(product.price);
   const original = product.originalPrice ? Number(product.originalPrice) : 0;
@@ -54,7 +55,7 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
     <Link
       href={`/${locale}/product/${product.id}`}
       onClick={handleClick}
-      className="group flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative"
+      className="group block relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 w-full overflow-hidden"
     >
       {/* 1. IMAGE CONTAINER (SQUARE & WHITE) */}
       <div className="relative aspect-square w-full bg-white overflow-hidden rounded-t-xl border-b border-gray-50">
@@ -64,6 +65,8 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-110"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+          priority={priority}
+          loading={priority ? "eager" : "lazy"}
           unoptimized={!isRemote} // Use unoptimized for Base64 (legacy images) to avoid next/image config errors
         />
 
@@ -82,12 +85,39 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
             e.preventDefault();
             e.stopPropagation();
             addToCart(product);
+            openCart(); // Open drawer immediately
             toast.success(`${displayTitle} added to cart!`);
+
+            // 📊 PIXEL TRACKING: AddToCart
+            // Facebook
+            // @ts-ignore
+            if (window.fbq) {
+              // @ts-ignore
+              window.fbq('track', 'AddToCart', {
+                content_name: displayTitle,
+                content_ids: [product.id],
+                content_type: 'product',
+                value: price,
+                currency: 'MAD'
+              });
+            }
+            // TikTok
+            // @ts-ignore
+            if (window.ttq) {
+              // @ts-ignore
+              window.ttq.track('AddToCart', {
+                content_id: product.id,
+                content_type: 'product',
+                content_name: displayTitle,
+                value: price,
+                currency: 'MAD'
+              });
+            }
           }}
-          className="absolute bottom-2 right-2 z-20 bg-white text-emerald-600 p-2 rounded-full shadow-md hover:scale-110 active:scale-95 transition-all duration-200 group-hover:opacity-100 opacity-100 md:opacity-0 translate-y-0 md:translate-y-2 group-hover:translate-y-0"
+          className="absolute bottom-3 right-3 z-20 bg-white text-emerald-600 p-2.5 rounded-full shadow-lg hover:bg-emerald-600 hover:text-white hover:scale-110 active:scale-95 transition-all duration-300 opacity-100 translate-y-0"
           aria-label="Add to cart"
         >
-          <Plus className="w-5 h-5" strokeWidth={3} />
+          <ShoppingBag className="w-5 h-5" strokeWidth={2.5} />
         </button>
       </div>
 

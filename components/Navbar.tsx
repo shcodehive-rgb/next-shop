@@ -9,8 +9,8 @@ import Swal from "sweetalert2";
 import { useTranslations } from "next-intl";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
-export default function Navbar({ onOpenCart }: { onOpenCart: () => void }) {
-    const { settings, cart, searchQuery, setSearchQuery } = useShop();
+export default function Navbar() {
+    const { settings, cart, searchQuery, setSearchQuery, openCart } = useShop();
     const router = useRouter();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -94,7 +94,7 @@ export default function Navbar({ onOpenCart }: { onOpenCart: () => void }) {
 
                     {/* Cart */}
                     <button
-                        onClick={onOpenCart}
+                        onClick={openCart}
                         className="relative p-2 text-gray-600 hover:text-emerald-600 transition-colors"
                         title={t('cart')}
                     >

@@ -39,7 +39,7 @@ function rateLimit(ip: string, limit: number, windowMs: number) {
 
 // 3. Main Middleware Function
 export default async function middleware(request: NextRequest) {
-    const ip = request.ip || '127.0.0.1';
+    const ip = (request as any).ip || request.headers.get('x-forwarded-for') || '127.0.0.1';
     const path = request.nextUrl.pathname;
 
     // --- RULE 1: Global Rate Limit (50 req / 10s) ---

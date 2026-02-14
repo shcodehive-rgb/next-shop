@@ -23,10 +23,11 @@ export interface Review {
 
 export interface Product {
     id: string;
-    title: string;
+    title: string | { ar: string; en: string; fr: string };
     price: string;
     image: string;
     images?: string[];
+    variants?: string[]; // Array of variants (e.g. ["S", "M", "L"])
     category: string;
     description?: string;
     cost?: string;
@@ -34,6 +35,7 @@ export interface Product {
     wholesalePrice?: string;
     minWholesaleQty?: number;
     allowAddToCart?: boolean;
+    selectedVariant?: string; // For cart items
     reviews?: Review[];
     isBestSeller?: boolean;
     originalPrice?: number;
@@ -48,14 +50,14 @@ export interface Customer {
     phone: string;
     city: string;
     totalSpent: number;
+    lastOrder: string;
     ordersCount: number;
     interests: string[]; // Categories they bought from
-    lastOrder: string;
 }
 
 export interface Category {
     id: string;
-    name: string;
+    name: string | { ar: string; en: string; fr: string };
     image: string;
 }
 
@@ -97,8 +99,43 @@ interface ShopContextType {
     products: Product[];
     categories: Category[];
     customers: Customer[];
-    cart: CartItem[]; // <--- New
-    // ... existing properties ...
+    cart: CartItem[];
+    settings: SiteSettings;
+    shippingRates: ShippingRate[];
+
+    // Actions
+    addProduct: (p: Product) => Promise<void>;
+    updateProduct: (id: string, p: Partial<Product>) => Promise<void>;
+    deleteProduct: (id: string) => Promise<void>;
+    addCategory: (c: Category) => Promise<void>;
+    deleteCategory: (id: string) => Promise<void>;
+
+    // Cart
+    addToCart: (p: Product, variant?: string, qty?: number) => void;
+    removeFromCart: (id: string, variant?: string) => void;
+    updateCartQty: (id: string, qty: number, variant?: string) => void;
+    clearCart: () => void;
+
+    // Settings & Shipping
+    updateSettings: (s: Partial<SiteSettings>) => Promise<void>;
+    addShippingRate: (rate: ShippingRate) => Promise<void>;
+    updateShippingRate: (id: string, rate: Partial<ShippingRate>) => Promise<void>;
+    deleteShippingRate: (id: string) => Promise<void>;
+    getShippingCost: (city: string) => number;
+
+    // Search & Filtering
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    filteredProducts: Product[];
+    isStoreActive: boolean;
+
+    // 🛒 UI State (Global)
+    isCartOpen: boolean;
+    openCart: () => void;
+    closeCart: () => void;
+    isCheckoutOpen: boolean;
+    openCheckout: () => void;
+    closeCheckout: () => void;
 }
 
 // --- DEFAULTS ---
@@ -125,6 +162,14 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [isStoreActive, setIsStoreActive] = useState(true);
 
+    // 🛒 UI State Implementation
+    const [isCartOpen, setIsCartOpen] = useState(false);
+    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+    const openCart = () => setIsCartOpen(true);
+    const closeCart = () => setIsCartOpen(false);
+    const openCheckout = () => setIsCheckoutOpen(true);
+    const closeCheckout = () => setIsCheckoutOpen(false);
 
 
     // 🔥 1. REAL-TIME DATA SYNC
@@ -314,32 +359,34 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const addToCart = (p: Product, qty = 1) => {
+    const addToCart = (p: Product, variant?: string, qty = 1) => {
         setCart((prev) => {
-            const existing = prev.find((i) => i.id === p.id);
+            // Check if item with same ID AND same variant exists
+            const existing = prev.find((i) => i.id === p.id && i.selectedVariant === variant);
             let newCart;
             if (existing) {
-                newCart = prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + qty } : i));
+                newCart = prev.map((i) => (i.id === p.id && i.selectedVariant === variant ? { ...i, qty: i.qty + qty } : i));
             } else {
-                newCart = [...prev, { ...p, qty }];
+                newCart = [...prev, { ...p, qty, selectedVariant: variant }];
             }
             saveCartToLocal(newCart);
             return newCart;
         });
+        setIsCartOpen(true);
     };
 
-    const removeFromCart = (id: string) => {
+    const removeFromCart = (id: string, variant?: string) => {
         setCart((prev) => {
-            const newCart = prev.filter((i) => i.id !== id);
+            const newCart = prev.filter((i) => !(i.id === id && i.selectedVariant === variant));
             saveCartToLocal(newCart);
             return newCart;
         });
     };
 
-    const updateCartQty = (id: string, qty: number) => {
-        if (qty < 1) return removeFromCart(id);
+    const updateCartQty = (id: string, qty: number, variant?: string) => {
+        if (qty < 1) return removeFromCart(id, variant);
         setCart((prev) => {
-            const newCart = prev.map((i) => (i.id === id ? { ...i, qty } : i));
+            const newCart = prev.map((i) => (i.id === id && i.selectedVariant === variant ? { ...i, qty } : i));
             saveCartToLocal(newCart);
             return newCart;
         });
@@ -434,7 +481,15 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 searchQuery,
                 setSearchQuery,
                 filteredProducts,
-                isStoreActive
+                isStoreActive,
+
+                // UI
+                isCartOpen,
+                openCart,
+                closeCart,
+                isCheckoutOpen,
+                openCheckout,
+                closeCheckout
             }}
         >
             {children}

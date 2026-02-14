@@ -16,7 +16,17 @@ export default function CollectionPage({ params }: CollectionPageProps) {
 
     // Derive data during render
     const category = categories.find((c) => c.id === id);
-    const categoryName = category ? category.name : (categories.length > 0 ? "Category Not Found" : "Loading...");
+    let categoryName: string;
+
+    if (category) {
+        if (typeof category.name === 'object') {
+            categoryName = (category.name as any)['ar'] || (category.name as any)['en'] || (category.name as any)['fr'] || "Collection";
+        } else {
+            categoryName = category.name;
+        }
+    } else {
+        categoryName = categories.length > 0 ? "Category Not Found" : "Loading...";
+    }
 
     // Filter logic
     const categoryProducts = categoryName && categoryName !== "Category Not Found" && categoryName !== "Loading..."

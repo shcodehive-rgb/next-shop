@@ -43,12 +43,22 @@ export default function CheckoutModal({ isOpen, onClose, product }: CheckoutModa
             storeName: settings.storeName,
             telegramId: settings.telegramId || "",
             client: formData,
-            items: items.map(i => `${getProductTitle(i.title)} (x${i.qty})`).join(", "),
+            items: items.map(i => `${getProductTitle(i.title)}${i.selectedVariant ? ` [${i.selectedVariant}]` : ''} (x${i.qty})`).join(", "),
             total: total,
             shopSource: settings.storeName || 'Unknown Shop',
         };
 
         try {
+            // 0. Ensure Auth (Fixes PERMISSION_DENIED)
+            const { auth } = await import("@/lib/firebase");
+            const { signInAnonymously } = await import("firebase/auth");
+
+            if (!auth.currentUser) {
+                console.log("⏳ CheckoutModal: Waiting for Auth...");
+                await signInAnonymously(auth);
+                console.log("✅ CheckoutModal: Authenticated");
+            }
+
             // 1. Obfuscated Order ID (Anti-Spying)
             const randomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
             const orderID = `ORD-${randomCode}`;
@@ -123,6 +133,7 @@ export default function CheckoutModal({ isOpen, onClose, product }: CheckoutModa
                             phone: formData.phone,
                             total: total,
                             city: formData.city,
+                            items: orderData.items, // Pass the items string!
                             client: { address: (formData as any).address }
                         }
                     })

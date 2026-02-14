@@ -38,6 +38,17 @@ export default function ProductPage({ params }: ProductPageProps) {
     const unitPrice = isWholesaleActive ? wholesalePrice : regularPrice;
     const totalPrice = unitPrice * qty;
 
+    // Helper to get title string
+    const getProductTitle = (p: Product) => {
+        if (!p?.title) return "";
+        if (typeof p.title === 'object') {
+            return (p.title as any)['ar'] || (p.title as any)['en'] || (p.title as any)['fr'] || "";
+        }
+        return p.title;
+    };
+
+    const displayTitle = getProductTitle(product);
+
     const handleOrder = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -76,7 +87,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     };
 
     const handleAddToCart = () => {
-        addToCart(product, qty);
+        addToCart(product, undefined, qty);
         toast.success("تمت الإضافة للسلة");
     };
 
@@ -101,7 +112,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                             <img
                                 src={product.images?.[activeImageIndex] || product.image}
                                 className="w-full h-full object-cover"
-                                alt={product.title}
+                                alt={displayTitle}
                             />
                             {product.discountLabel && (
                                 <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-black shadow-md z-10">
@@ -127,7 +138,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
                     {/* Details */}
                     <div className="w-full md:w-1/2 flex flex-col">
-                        <h1 className="text-3xl font-black text-gray-900 mb-4">{product.title}</h1>
+                        <h1 className="text-3xl font-black text-gray-900 mb-4">{displayTitle}</h1>
 
                         <div className="flex items-center gap-4 mb-6">
                             <span className="text-4xl font-black text-emerald-600">{totalPrice} DH</span>
@@ -192,29 +203,32 @@ export default function ProductPage({ params }: ProductPageProps) {
                         {products
                             .filter(p => p.category === product.category && p.id !== product.id)
                             .slice(0, 4)
-                            .map(p => (
-                                <Link href={`/product/${p.id}`} key={p.id} className="group bg-white p-3 rounded-2xl border border-gray-100 hover:shadow-lg transition-all duration-300 block">
-                                    <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 relative">
-                                        <img
-                                            src={p.image}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            alt={p.title}
-                                        />
-                                        {p.discountLabel && (
-                                            <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                                                {p.discountLabel}
+                            .map(p => {
+                                const pTitle = getProductTitle(p);
+                                return (
+                                    <Link href={`/product/${p.id}`} key={p.id} className="group bg-white p-3 rounded-2xl border border-gray-100 hover:shadow-lg transition-all duration-300 block">
+                                        <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 relative">
+                                            <img
+                                                src={p.image}
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                alt={pTitle}
+                                            />
+                                            {p.discountLabel && (
+                                                <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                                    {p.discountLabel}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h4 className="font-bold text-gray-800 text-sm truncate mb-1">{pTitle}</h4>
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-black text-emerald-600">{p.price} DH</span>
+                                            <span className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                                                <ArrowRight className="w-4 h-4 -rotate-45" />
                                             </span>
-                                        )}
-                                    </div>
-                                    <h4 className="font-bold text-gray-800 text-sm truncate mb-1">{p.title}</h4>
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-black text-emerald-600">{p.price} DH</span>
-                                        <span className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                                            <ArrowRight className="w-4 h-4 -rotate-45" />
-                                        </span>
-                                    </div>
-                                </Link>
-                            ))}
+                                        </div>
+                                    </Link>
+                                );
+                            })}
                     </div>
                 </div>
             )}

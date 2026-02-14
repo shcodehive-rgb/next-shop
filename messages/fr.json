@@ -6,7 +6,8 @@
         "currency": "DH",
         "price": "Prix",
         "shipping": "Livraison",
-        "total": "Total"
+        "total": "Total",
+        "cod_hint": "Paiement à la livraison • Livraison rapide"
     },
     "Navbar": {
         "home": "Accueil",
@@ -52,6 +53,7 @@
         "submit": "Confirmer la commande",
         "total": "Total",
         "cod_hint": "Paiement à la livraison • Livraison rapide",
+        "free_shipping": "Livraison Gratuite",
         "success_title": "Commande reçue! 🎉",
         "success_desc": "Nous vous appellerons bientôt pour confirmer.",
         "thank_you": "Merci",
@@ -93,6 +95,7 @@
         "noCustomersFound": "Aucun client trouvé",
         "products": "Produits",
         "categories": "Catégories",
+        "variants": "Variantes",
         "design": "Design",
         "settings": "Paramètres",
         "reviews": "Avis",
@@ -112,6 +115,8 @@
         "min_wholesale": "Qté Min Gros",
         "category": "Catégorie",
         "discount_badge": "Badge de Réduction",
+        "description": "Description du Produit",
+        "product_description_placeholder": "Entrez une description détaillée du produit...",
         "enable_add_to_cart": "Activer Bouton Panier",
         "best_seller": "🔥 Meilleure Vente",
         "product_images": "Images (Max 5)",

@@ -6,7 +6,8 @@
         "currency": "MAD",
         "price": "Price",
         "shipping": "Shipping",
-        "total": "Total"
+        "total": "Total",
+        "cod_hint": "Cash on Delivery • Fast Shipping"
     },
     "Navbar": {
         "home": "Home",
@@ -52,6 +53,7 @@
         "submit": "Confirm Order",
         "total": "Total",
         "cod_hint": "Cash on Delivery • Fast Shipping",
+        "free_shipping": "Free Shipping",
         "success_title": "Order Received! 🎉",
         "success_desc": "We will call you soon to confirm.",
         "thank_you": "Thank You",
@@ -93,6 +95,7 @@
         "noCustomersFound": "No customers found",
         "products": "Products",
         "categories": "Categories",
+        "variants": "Variants",
         "design": "Design",
         "settings": "Settings",
         "reviews": "Reviews",
@@ -112,6 +115,8 @@
         "min_wholesale": "Min Wholesale Qty",
         "category": "Category",
         "discount_badge": "Discount Label",
+        "description": "Product Description",
+        "product_description_placeholder": "Enter detailed product description...",
         "enable_add_to_cart": "Enable Add to Cart",
         "best_seller": "🔥 Best Seller",
         "product_images": "Product Images (Max 5)",

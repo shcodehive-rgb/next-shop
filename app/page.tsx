@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+
 
 // 🛑 SERVER-SIDE LOGIC FOR ROOT REDIRECT
 // We use Firebase Admin SDK (if possible) or Client SDK on server? 

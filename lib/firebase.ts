@@ -17,14 +17,16 @@ const firebaseConfig = {
 import { getFirestore } from "firebase/firestore";
 
 import { getStorage } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 
 // Initialize Firebase (Singleton pattern)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const rtdb = getDatabase(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 
 
-export { app, rtdb, db, storage };
+export { app, rtdb, db, storage, auth };
 
 

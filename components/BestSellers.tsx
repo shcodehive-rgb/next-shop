@@ -31,7 +31,7 @@ export default function BestSellers({ products }: { products: any[] }) {
                   key={`product-${product.id}-${index}`}
                   className="flex-shrink-0 w-[300px]"
                 >
-                  <ProductCard product={product} />
+                  <ProductCard product={product} priority={index < 4} />
                 </div>
               ))}
               {/* Second set (duplicate for infinite loop) */}
@@ -40,7 +40,7 @@ export default function BestSellers({ products }: { products: any[] }) {
                   key={`product-dup-${product.id}-${index}`}
                   className="flex-shrink-0 w-[300px]"
                 >
-                  <ProductCard product={product} />
+                  <ProductCard product={product} priority={false} />
                 </div>
               ))}
             </div>

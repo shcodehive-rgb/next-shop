@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useShop } from "@/context/ShopContext";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
@@ -34,6 +34,24 @@ export default function AdminPage() {
     const [inputPassword, setInputPassword] = useState("");
 
     // 🔒 1. Login Guard
+    useEffect(() => {
+        const storedAuth = localStorage.getItem("adminAuth");
+        // @ts-ignore
+        if (storedAuth === "true") setIsAuthenticated(true);
+    }, []);
+
+    const handleLogin = () => {
+        // @ts-ignore
+        const correctPassword = settings?.adminPassword || "123456";
+        if (inputPassword === correctPassword) {
+            setIsAuthenticated(true);
+            localStorage.setItem("adminAuth", "true");
+            toast.success(t('success'));
+        } else {
+            toast.error(`❌ ${t('wrongCode')}`);
+        }
+    };
+
     if (!isAuthenticated) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4 font-tajawal">
@@ -49,22 +67,11 @@ export default function AdminPage() {
                         value={inputPassword}
                         onChange={(e) => setInputPassword(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                const correctPassword = settings?.adminPassword || "123456";
-                                if (inputPassword === correctPassword) setIsAuthenticated(true);
-                                else toast.error(`❌ ${t('wrongCode')}`);
-                            }
+                            if (e.key === 'Enter') handleLogin();
                         }}
                     />
                     <button
-                        onClick={() => {
-                            const correctPassword = settings?.adminPassword || "123456";
-                            if (inputPassword === correctPassword) {
-                                setIsAuthenticated(true);
-                            } else {
-                                toast.error(`❌ ${t('wrongCode')}`);
-                            }
-                        }}
+                        onClick={handleLogin}
                         className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition"
                     >
                         {t('login')}
@@ -76,7 +83,11 @@ export default function AdminPage() {
     }
 
     // --- ACTIONS ---
-    const handleLogout = () => router.push("/");
+    const handleLogout = () => {
+        localStorage.removeItem("adminAuth");
+        setIsAuthenticated(false);
+        router.push("/");
+    };
 
     // --- TABS CONFIG ---
     const tabs = [

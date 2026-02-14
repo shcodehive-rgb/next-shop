@@ -18,13 +18,21 @@ export default function AdminSettings() {
         }
     }, [settings]);
 
-    const handleSaveSettings = () => {
-        updateSettings(localSettings);
-        toast.success(t('saved'));
-        // Reload to apply system language changes (dir/lang)
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
+    const handleSaveSettings = async () => {
+        try {
+            await updateSettings(localSettings);
+            toast.success(t('saved'));
+
+            // Only reload if language changed (to apply dir/lang attributes)
+            if (localSettings.default_locale !== settings.default_locale) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error(t('error_generic'));
+        }
     };
 
     const handleChange = (field: string, value: any) => {

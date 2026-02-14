@@ -21,7 +21,8 @@ export default function AdminProducts() {
     const defaultForm = {
         title: "", price: "", cost: "", category: "General", stock: 10, description: "", image: "", images: [] as string[],
         wholesalePrice: "", minWholesaleQty: 0, allowAddToCart: true, reviews: [] as any[], isBestSeller: false,
-        originalPrice: "", discountLabel: "", shipping_type: "standard" as "standard" | "free"
+        originalPrice: "", discountLabel: "", shipping_type: "standard" as "standard" | "free",
+        variants: [] as string[]
     };
     const [formData, setFormData] = useState(defaultForm);
 
@@ -89,7 +90,8 @@ export default function AdminProducts() {
             originalPrice: p.originalPrice ? String(p.originalPrice) : "",
             discountLabel: p.discountLabel || "",
             shipping_type: p.shipping_type || "standard",
-            reviews: p.reviews || []
+            reviews: p.reviews || [],
+            variants: p.variants || []
         });
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -154,6 +156,34 @@ export default function AdminProducts() {
                                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                                 className="w-full p-3 bg-gradient-to-r from-emerald-50 to-blue-50 border-2 border-emerald-200 rounded-xl font-bold text-gray-900"
                                 placeholder={t('product_name_placeholder')}
+                                dir="auto"
+                            />
+                        </div>
+                        {/* Variants Field */}
+                        <div className="col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">
+                                {t('variants') || "Variants / Sizes (Comma separated, e.g. S, M, L)"}
+                            </label>
+                            <input
+                                value={formData.variants ? formData.variants.join(", ") : ""}
+                                onChange={e => {
+                                    const val = e.target.value;
+                                    const arr = val ? val.split(",").map(s => s.trim()).filter(Boolean) : [];
+                                    setFormData({ ...formData, variants: arr });
+                                }}
+                                className="w-full p-3 bg-white border rounded-xl font-medium text-gray-900"
+                                placeholder="S, M, L, XL"
+                                dir="auto"
+                            />
+                        </div>
+                        {/* Description Field */}
+                        <div className="col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">{t('description')}</label>
+                            <textarea
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                className="w-full p-3 bg-gray-50 border rounded-xl font-medium text-gray-900 min-h-[100px]"
+                                placeholder={t('product_description_placeholder') || "Enter product description..."}
                                 dir="auto"
                             />
                         </div>
@@ -288,7 +318,7 @@ export default function AdminProducts() {
                             <tbody className="divide-y">
                                 {products.map(p => (
                                     <tr key={p.id} className="hover:bg-gray-50 transition group">
-                                        <td className="p-4 w-20"><img src={p.image} className="w-12 h-12 rounded-lg object-cover bg-gray-100 border" /></td>
+                                        <td className="p-4 w-20"><img src={p.image} alt={getProductTitle(p.title)} className="w-12 h-12 rounded-lg object-cover bg-gray-100 border" /></td>
                                         <td className="p-4 font-bold text-gray-900">
                                             {/* Handle both string and object titles for display */}
                                             {getProductTitle(p.title)}

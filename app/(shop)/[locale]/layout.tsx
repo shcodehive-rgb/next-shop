@@ -11,6 +11,8 @@ import Analytics from "@/components/Analytics";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import StoreProtectedWrapper from "@/components/StoreProtectedWrapper";
 import ScrollToTop from "@/components/ScrollToTop";
+import FacebookPixel from "@/components/FacebookPixel";
+import TikTokPixel from "@/components/TikTokPixel";
 
 const tajawal = Tajawal({
     subsets: ["arabic"],
@@ -47,6 +49,8 @@ export default async function LocaleLayout({
                 <NextIntlClientProvider messages={messages}>
                     <ShopProvider>
                         <StoreProtectedWrapper>
+                            <FacebookPixel />
+                            <TikTokPixel />
                             <Analytics />
                             <StoreLayout>
                                 {children}

@@ -7,7 +7,13 @@ import { rtdb } from "@/lib/firebase";
 import { ref, push, set } from "firebase/database";
 import { Loader2, CheckCircle, Truck, MapPin, X } from "lucide-react";
 
-// ...
+import { useTranslations, useLocale } from "next-intl";
+import Swal from "sweetalert2";
+
+interface CheckoutFormProps {
+    product: Product;
+    className?: string;
+}
 
 export default function CheckoutForm({ product, className = "" }: CheckoutFormProps) {
     // @ts-ignore
@@ -15,7 +21,16 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({ name: "", phone: "", city: "", address: "" });
     const t = useTranslations('Checkout');
-    const tCommon = useTranslations('Common')
+    const tCommon = useTranslations('Common');
+    const locale = useLocale();
+
+    const getLocalizedTitle = (title: any) => {
+        if (typeof title === 'string') return title;
+        if (typeof title === 'object' && title !== null) {
+            return title[locale] || title['ar'] || title['en'] || title['fr'] || "Product";
+        }
+        return "Product";
+    };
 
     // Shipping Logic
     const [shippingCost, setShippingCost] = useState(0);
@@ -47,16 +62,21 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
     // Let's go with: Cart Items + Current Product (if not in cart).
     // If Current Product IS in cart, we just use the Cart set (so we don't duplicate).
 
+    // State to track if the user manually dismisses the "current product" (Buy Now item)
+    // This is needed because the "Buy Now" item might not be in the global cart yet.
+    const [isProductDismissed, setIsProductDismissed] = useState(false);
+
     let items = [...cart];
+    // Only add current product if:
+    // 1. It's not already in the cart (to avoid dupes)
+    // 2. It hasn't been dismissed by the user
     const isCurrentProductInCart = cart.some(item => item.id === product.id);
 
-    if (!isCurrentProductInCart) {
+    if (!isCurrentProductInCart && !isProductDismissed) {
         items.push({ ...product, qty: 1 });
     }
 
-    // If cart is empty, items is just [product] (handled by logic above)
-    // Wait, if cart is empty, items = [product]. Correct.
-
+    // Calculate totals
     const productTotal = items.reduce((sum, item) => sum + (Number(item.price) * item.qty), 0);
     const finalTotal = productTotal + shippingCost;
 
@@ -93,7 +113,12 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             const orderID = `ORD-${randomCode}`;
 
             // Save using custom ID (not push ID)
-            await set(ref(rtdb, `orders/${safeStoreName}/${orderID}`), { ...orderData, id: orderID });
+            try {
+                await set(ref(rtdb, `orders/${safeStoreName}/${orderID}`), { ...orderData, id: orderID });
+            } catch (rtdbError) {
+                console.error("RTDB Write Failed (Permission/Network)", rtdbError);
+                // Continue execution - don't block user
+            }
 
             // ---------------------------------------------------------
             // 🆕 CUSTOMER DATA COLLECTION (Firestore)
@@ -146,6 +171,9 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             const telegramTargetId = settings.telegramNotificationId || settings.telegramId;
 
             try {
+                // Ensure items string is generated exactly as needed
+                const itemsString = items.map(i => `${typeof i.title === 'string' ? i.title : (i.title as any)[locale] || (i.title as any)['en']} (x${i.qty})`).join(", ");
+
                 await fetch('/api/order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -155,6 +183,7 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                             phone: formData.phone,
                             total: finalTotal,
                             city: formData.city,
+                            items: itemsString,
                             client: { address: formData.address }
                         }
                     })
@@ -242,6 +271,44 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
         }
     };
 
+    // 📊 PIXEL TRACKING: InitiateCheckout
+    const [hasInitiatedCheckout, setHasInitiatedCheckout] = useState(false);
+
+    const handleInputFocus = () => {
+        if (!hasInitiatedCheckout) {
+            setHasInitiatedCheckout(true);
+
+            // Facebook
+            // @ts-ignore
+            if (window.fbq) {
+                // @ts-ignore
+                window.fbq('track', 'InitiateCheckout', {
+                    content_ids: items.map(i => i.id),
+                    content_type: 'product',
+                    currency: 'MAD',
+                    value: finalTotal,
+                    num_items: items.length
+                });
+            }
+
+            // TikTok
+            // @ts-ignore
+            if (window.ttq) {
+                // @ts-ignore
+                window.ttq.track('InitiateCheckout', {
+                    contents: items.map(i => ({
+                        content_id: i.id,
+                        content_name: i.title,
+                        quantity: i.qty,
+                        price: i.price
+                    })),
+                    value: finalTotal,
+                    currency: 'MAD'
+                });
+            }
+        }
+    };
+
     return (
         <form onSubmit={handleSubmit} className={`space-y-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 ${className}`}>
 
@@ -251,6 +318,7 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                 <input
                     required
                     value={formData.name}
+                    onFocus={handleInputFocus}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                     className="w-full p-3.5 border rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition font-bold text-gray-900 shadow-sm"
                     placeholder={t('name')}
@@ -261,6 +329,7 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                 <input
                     required type="tel"
                     value={formData.phone}
+                    onFocus={handleInputFocus}
                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full p-3.5 border rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition font-bold text-gray-900 shadow-sm"
                     placeholder="06XXXXXXXX"
@@ -290,84 +359,75 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             </div>
 
             {/* MINI-CART SUMMARY */}
-            {items.length > 1 && (
-                <div className="bg-white p-3 rounded-xl border border-gray-200 animate-in fade-in zoom-in duration-300">
-                    <h4 className="flex items-center justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">
-                        <span>Your Order ({items.length} items)</span>
+            {/* CART SUMMARY - Improved UI */}
+            {items.length > 0 && (
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-4 animate-in fade-in zoom-in duration-300">
+                    <h4 className="flex items-center justify-between text-xs font-bold text-gray-400 uppercase tracking-wider border-b pb-2">
+                        <span>Your Order ({items.length})</span>
                     </h4>
-                    <div className="space-y-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+
+                    <div className="space-y-4 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
                         {items.map((item, idx) => (
-                            <div key={idx} className="flex items-start justify-between text-sm group">
-                                <div className="flex items-start gap-3">
-                                    <div className="relative">
-                                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-100">
-                                            {/* We can try to show image if available */}
-                                            {item.image ? (
-                                                <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                                    <Loader2 className="w-4 h-4" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <span className="absolute -top-2 -right-2 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                                            {item.qty}x
-                                        </span>
+                            <div key={`${item.id}-${idx}`} className="flex items-start gap-3 pb-4 border-b border-gray-50 last:border-0 last:pb-0 relative group">
+
+                                {/* Image */}
+                                <div className="relative shrink-0">
+                                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-100">
+                                        {item.image ? (
+                                            <img
+                                                src={item.image}
+                                                alt={typeof item.title === 'string' ? item.title : (item.title as any)[locale] || (item.title as any)['en'] || 'Product'}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                <Loader2 className="w-5 h-5" />
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-gray-900 font-bold text-xs line-clamp-2 leading-tight max-w-[120px]">{item.title}</span>
-                                        <span className="text-gray-500 text-[10px] mt-0.5">{Number(item.price)} DH / unit</span>
-                                    </div>
+                                    <span className="absolute -top-2 -right-2 bg-emerald-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm ring-2 ring-white">
+                                        {item.qty}
+                                    </span>
                                 </div>
 
-                                <div className="flex flex-col items-end gap-1">
-                                    <span className="text-emerald-700 font-bold font-mono">{Number(item.price) * item.qty} DH</span>
+                                {/* Details */}
+                                <div className="flex-1 min-w-0 flex flex-col justify-between h-16">
+                                    <h5 className="text-gray-900 font-bold text-sm leading-tight line-clamp-2" title={getLocalizedTitle(item.title)}>
+                                        {getLocalizedTitle(item.title)}
+                                    </h5>
+                                    {/* @ts-ignore */}
+                                    {item.selectedOptions && (
+                                        <p className="text-xs text-gray-500 mt-0.5">
+                                            {/* @ts-ignore */}
+                                            {Object.values(item.selectedOptions).join(', ')}
+                                        </p>
+                                    )}
+                                </div>
 
-                                    {/* Remove Button */}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            // @ts-ignore
-                                            if (useShop) {
-                                                const { removeFromCart } = require("@/context/ShopContext").useShop();
-                                                // Wait, I can't require inside. I should use the hook above.
-                                                // But I already destructured removeFromCart above.
-                                                // Let's use it.
-                                                // Wait, I need to make sure I'm using the one from scope.
-                                            }
-                                        }}
-                                    // Actually better: just use the function from scope.
-                                    // But I need to add removeFromCart to the destructuring at the top.
-                                    // It was NOT in the previous file content destructuring?
-                                    // Let's check line 19.
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            // Only allow removing if it's in the cart.
-                                            // If it's the current product (added via fallback), it might not have an ID for removal from cart context?
-                                            // The fallback adds `{...product, qty: 1}`. 'product' has an ID.
-                                            // Calling removeFromCart(item.id) will try to remove it from cart.
-                                            // If it matches, it removes it.
+                                <div className="flex items-center justify-between mt-auto">
+                                    <span className="text-gray-500 text-xs">{Number(item.price)} DH <span className="text-[10px]">/ unit</span></span>
+                                    <span className="text-emerald-700 font-bold text-sm">{Number(item.price) * item.qty} DH</span>
+                                </div>
 
-                                            // If it was the current product (not in cart), removeFromCart won't do anything to the cart (it wasn't there).
-                                            // And since 'items' is derived from cart + current, it will just come back.
+                                {/* Remove Button (Right-aligned, mostly visible on hover on desktop) */}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
 
-                                            // If it IS in cart, it gets removed. Then 'items' recalculates.
-                                            // Logic: 'isCurrentProductInCart' becomes false.
-                                            // 'items' becomes [...emptyCart, currentProduct].
-                                            // So it "resets" to 1. This is good.
-
+                                        // Logic: If in cart, remove from cart. If it's the current "Buy Now" product, dismiss it locally.
+                                        if (cart.some(c => c.id === item.id)) {
                                             removeFromCart(item.id);
-                                        }}
-                                        className="text-gray-400 hover:text-red-500 transition p-1 hover:bg-red-50 rounded-full"
-                                        title="Remove item"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
+                                        } else if (item.id === product.id) {
+                                            setIsProductDismissed(true);
+                                        }
+                                    }}
+                                    className="absolute -top-1 -right-1 md:static md:top-auto md:right-auto text-gray-300 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                    title="Remove item"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -406,6 +466,6 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             <p className="text-center text-xs text-gray-400 mt-2 flex items-center justify-center gap-1">
                 {t('cod_hint')}
             </p>
-        </form>
+        </form >
     );
 }

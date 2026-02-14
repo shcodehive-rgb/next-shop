@@ -85,7 +85,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
         if ((window as any).fbq) (window as any).fbq('track', 'AddToCart');
         if ((window as any).ttq) (window as any).ttq.track('AddToCart');
 
-        addToCart(product, qty);
+        addToCart(product, undefined, qty);
         toast.success("تمت الإضافة للسلة");
         onClose();
     };

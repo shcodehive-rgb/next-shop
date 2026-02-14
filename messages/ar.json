@@ -6,7 +6,8 @@
         "currency": "د.م",
         "price": "السعر",
         "shipping": "الشحن",
-        "total": "المجموع"
+        "total": "المجموع",
+        "cod_hint": "الدفع عند الاستلام • توصيل سريع"
     },
     "Navbar": {
         "home": "الرئيسية",
@@ -52,6 +53,7 @@
         "submit": "أكد الطلب",
         "total": "المجموع الكلي",
         "cod_hint": "الدفع عند الاستلام • توصيل سريع",
+        "free_shipping": "توصيل مجاني",
         "success_title": "تم استلام طلبك! 🎉",
         "success_desc": "سنتصل بك قريباً لتأكيد الطلبية.",
         "thank_you": "شكراً",
@@ -93,6 +95,7 @@
         "noCustomersFound": "لا يوجد زبناء",
         "products": "المنتجات",
         "categories": "التصنيفات",
+        "variants": "الأنواع",
         "design": "التصميم",
         "settings": "الإعدادات",
         "reviews": "التقييمات",
@@ -113,6 +116,8 @@
         "min_wholesale": "أقل كمية للجملة",
         "category": "التصنيف",
         "discount_badge": "عنوان التخفيض (Badge)",
+        "description": "وصف المنتج",
+        "product_description_placeholder": "أدخل وصفًا تفصيليًا للمنتج...",
         "enable_add_to_cart": "تفعيل زر \"إضافة للسلة\"",
         "best_seller": "🔥 منتج مميز (Best Seller)",
         "shipping_type": "نوع الشحن",
