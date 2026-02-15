@@ -213,34 +213,30 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             }
 
             // B. Server-Side CAPI (The 100% Tracking Fix)
-            if (settings.facebookAccessToken && settings.facebookPixelId) {
-                try {
-                    fetch('/api/fb-conversion', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            event_name: 'Purchase',
-                            event_time: Math.floor(Date.now() / 1000),
-                            event_id: eventID, // Must match Browser Pixel ID
-                            pixel_id: settings.facebookPixelId,
-                            access_token: settings.facebookAccessToken,
-                            user_data: {
-                                phone: formData.phone,
-                                city: formData.city,
-                                client_user_agent: navigator.userAgent,
-                                client_ip_address: '0.0.0.0' // Will be reliable only in real prod, best effort here
-                            },
-                            custom_data: {
-                                value: finalTotal,
-                                currency: 'MAD',
-                                content_ids: items.map(i => i.id),
-                                content_name: items.map(i => i.title).join(', ')
-                            }
-                        })
-                    });
-                } catch (err) {
-                    console.error("CAPI Trigger Failed", err);
-                }
+            // B. Server-Side CAPI (The 100% Tracking Fix)
+            try {
+                fetch('/api/fb-conversion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event_name: 'Purchase',
+                        event_id: eventID,
+                        user_data: {
+                            phone: formData.phone,
+                            city: formData.city,
+                            client_user_agent: navigator.userAgent,
+                            client_ip_address: '0.0.0.0'
+                        },
+                        custom_data: {
+                            value: finalTotal,
+                            currency: 'MAD',
+                            content_ids: items.map(i => i.id),
+                            content_name: items.map(i => i.title).join(', ')
+                        }
+                    })
+                });
+            } catch (err) {
+                console.error("CAPI Trigger Failed", err);
             }
 
             // @ts-ignore
