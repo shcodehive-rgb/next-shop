@@ -373,6 +373,33 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             return newCart;
         });
         setIsCartOpen(true);
+
+        // 📊 PIXEL TRACKING: AddToCart
+        // @ts-ignore
+        if (typeof window !== 'undefined' && window.fbq) {
+            // @ts-ignore
+            window.fbq('track', 'AddToCart', {
+                content_name: p.title,
+                content_ids: [p.id],
+                content_type: 'product',
+                value: Number(p.price) * qty,
+                currency: 'MAD',
+                variant: variant
+            });
+        }
+        // @ts-ignore
+        if (typeof window !== 'undefined' && window.ttq) {
+            // @ts-ignore
+            window.ttq.track('AddToCart', {
+                content_id: p.id,
+                content_type: 'product',
+                content_name: p.title,
+                quantity: qty,
+                price: Number(p.price),
+                value: Number(p.price) * qty,
+                currency: 'MAD'
+            });
+        }
     };
 
     const removeFromCart = (id: string, variant?: string) => {

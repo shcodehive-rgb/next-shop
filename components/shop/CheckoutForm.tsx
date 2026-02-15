@@ -196,21 +196,8 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             const eventID = crypto.randomUUID ? crypto.randomUUID() : `order_${Date.now()}`;
             console.log("💰 Order Success! Firing Hybrid Events...", eventID);
 
-            // A. Browser Pixel (with Event ID for Deduplication)
-            // @ts-ignore
-            if (window.fbq) {
-                // @ts-ignore
-                window.fbq('track', 'Purchase', {
-                    value: finalTotal,
-                    currency: 'MAD',
-                    content_name: items.map(i => i.title).join(', '),
-                    content_ids: items.map(i => i.id),
-                    content_type: 'product',
-                    user_data: {
-                        ph: formData.phone // Pixel will hash this automatically if Advanced Matching is on
-                    }
-                }, { eventID: eventID }); // <--- CRITICAL for Deduplication
-            }
+            // A. Browser Pixel (REMOVED for Security - Server-Side Only)
+            // if (window.fbq) { ... }
 
             // B. Server-Side CAPI (The 100% Tracking Fix)
             // B. Server-Side CAPI (The 100% Tracking Fix)
