@@ -104,3 +104,19 @@ export const getStoreData = unstable_cache(
     ['store-data-v3'],
     { revalidate: 60, tags: ['store-data'] }
 );
+
+// Fetch SINGLE Product for SEO (Server Component)
+export async function getProduct(id: string) {
+    try {
+        const docRef = doc(db, "products", id);
+        const snapshot = await getDoc(docRef);
+
+        if (snapshot.exists()) {
+            return { id: snapshot.id, ...snapshot.data() } as any;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching product:", error);
+        return null;
+    }
+}

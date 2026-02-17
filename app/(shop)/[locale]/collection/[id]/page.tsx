@@ -1,5 +1,7 @@
 import { getCategoryData } from "@/lib/server/getCategoryData";
+import { getStoreData } from "@/lib/server/getStoreData"; // Import global data fetcher for all categories
 import ProductCard from "@/components/shop/ProductCard";
+import CategoryFilter from "@/components/shop/CategoryFilter"; // Import Filter Component
 import { getTranslations } from "next-intl/server";
 import { Package } from "lucide-react";
 
@@ -10,6 +12,7 @@ interface Props {
 export default async function CollectionPage({ params }: Props) {
     const { id, locale } = await params;
     const { category, products } = await getCategoryData(id);
+    const { categories: allCategories } = await getStoreData(); // Fetch all categories for filter
     const t = await getTranslations('Collection');
 
     // Get category name with translation fallback
@@ -29,11 +32,16 @@ export default async function CollectionPage({ params }: Props) {
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="container mx-auto px-4">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-black text-gray-900 mb-2">{categoryName}</h1>
-                    <p className="text-gray-600">
-                        {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
-                    </p>
+                <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-black text-gray-900 mb-2">{categoryName}</h1>
+                        <p className="text-gray-600">
+                            {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+                        </p>
+                    </div>
+
+                    {/* Filter Component */}
+                    <CategoryFilter categories={allCategories} currentCategoryId={id} />
                 </div>
 
                 {/* Products Grid */}

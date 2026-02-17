@@ -101,7 +101,7 @@ export default function CartDrawer() {
                                 {/* Image */}
                                 <div className="relative w-20 h-20 shrink-0 bg-gray-50 rounded-xl overflow-hidden">
                                     <Image
-                                        src={item.image || '/placeholder.png'}
+                                        src={item.image || '/placeholder.svg'}
                                         alt={getLocalizedTitle(item.title)}
                                         fill
                                         className="object-cover"

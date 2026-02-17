@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 
 import { useShop, Product, Category, SiteSettings } from "@/context/ShopContext";
 import HeroBanner from "@/components/HeroBanner";
@@ -60,6 +60,15 @@ export default function HomeClient({ initialProducts, initialCategories, initial
     // Filter Best Sellers
     const bestSellers = products.filter(p => p.isBestSeller);
 
+    // Category Filter State
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    // Filter Logic
+    const filteredCategories = selectedCategory === 'all'
+        ? categories
+        : categories.filter(c => c.id === selectedCategory);
+
     return (
         <div className="min-h-screen bg-white pb-20 font-tajawal">
 
@@ -77,6 +86,8 @@ export default function HomeClient({ initialProducts, initialCategories, initial
             <BestSellers products={bestSellers} />
 
             {/* 4. PRODUCTS BY CATEGORY */}
+
+
             {categories.length === 0 ? (
                 <div className="text-center py-20 px-4">
                     <div className="bg-emerald-50 rounded-3xl p-8 max-w-2xl mx-auto border border-emerald-100">

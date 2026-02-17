@@ -17,6 +17,7 @@ import AdminSettings from "@/components/admin/AdminSettings";
 import AdminReviews from "@/components/admin/AdminReviews";
 import AdminPages from "@/components/admin/AdminPages";
 import AdminShipping from "@/components/admin/AdminShipping";
+import AdminOrders from "@/components/admin/AdminOrders";
 
 export default function AdminPage() {
     const { settings } = useShop();
@@ -26,7 +27,7 @@ export default function AdminPage() {
     const router = useRouter();
 
     // Key State
-    const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'customers' | 'design' | 'settings' | 'reviews' | 'pages' | 'shipping'>('products');
+    const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'orders' | 'customers' | 'design' | 'settings' | 'reviews' | 'pages' | 'shipping'>('orders');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Auth State
@@ -92,6 +93,7 @@ export default function AdminPage() {
     // --- TABS CONFIG ---
     const tabs = [
         { id: 'products', label: t('products'), icon: Package },
+        { id: 'orders', label: t('orders') || "Orders", icon: ShoppingBag },
         { id: 'categories', label: t('categories'), icon: Tag },
         { id: 'customers', label: t('customers'), icon: Users },
         { id: 'shipping', label: t('shipping'), icon: Truck },
@@ -213,6 +215,7 @@ export default function AdminPage() {
                     {/* Content */}
                     <div className="animate-in fade-in zoom-in-95 duration-500">
                         {activeTab === 'products' && <AdminProducts />}
+                        {activeTab === 'orders' && <AdminOrders />}
                         {activeTab === 'categories' && <AdminCategories />}
                         {activeTab === 'customers' && <AdminCustomers />}
                         {activeTab === 'shipping' && <AdminShipping />}

@@ -4,22 +4,29 @@
 import { useState, useEffect } from "react";
 import { useShop, Product } from "@/context/ShopContext";
 import { rtdb } from "@/lib/firebase";
-import { ref, push, set } from "firebase/database";
-import { Loader2, CheckCircle, Truck, MapPin, X } from "lucide-react";
+import { ref as dbRef, push, set } from "firebase/database";
+import { Loader2, CheckCircle, Truck, MapPin, X, ShieldCheck, BadgeCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { useTranslations, useLocale } from "next-intl";
 import Swal from "sweetalert2";
 
-interface CheckoutFormProps {
-    product: Product;
+export interface CheckoutFormProps {
+    product?: Product; // Kept for backward compat if needed, but directItem is better
     className?: string;
+    directOrder?: {
+        items: any[];
+        total: number;
+    };
+    onAddToCart?: () => void;
 }
 
-export default function CheckoutForm({ product, className = "" }: CheckoutFormProps) {
+export default function CheckoutForm({ product, className = "", directOrder, onAddToCart }: CheckoutFormProps) {
     // @ts-ignore
     const { settings, getShippingCost, cart, clearCart, removeFromCart } = useShop();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({ name: "", phone: "", city: "", address: "" });
+    const router = useRouter();
     const t = useTranslations('Checkout');
     const tCommon = useTranslations('Common');
     const locale = useLocale();
@@ -46,39 +53,15 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
     }, [formData.city, settings.shippingMode, getShippingCost]);
 
 
-    // COMBINED ORDER LOGIC: Current Product + Cart Items
-    // If the current product is ALREADY in the cart, we use the cart version (to respect qty).
-    // If not, we add it as a new item (qty 1).
-    // Actually, "Direct Response" usually means "I want this specific item now". 
-    // But if I have a cart, I probably want to checkout everything together.
+    // ORDER ITEM LOGIC
+    // If directOrder is provided, use IT.
+    // Otherwise, use Cart.
 
-    // Strategy: 
-    // 1. Start with Cart Items.
-    // 2. Check if 'product' is in Cart.
-    // 3. If yes, use Cart Items as is (assuming user updated qty there, or we could increment). 
-    //    *User Request*: "If there are items in the cart, it combines them with the current product".
-    //    Let's ensure the current product is present.
+    // We only use the cart if directOrder is NOT present.
+    const itemsToOrder = directOrder ? directOrder.items : cart;
+    const itemsTotal = directOrder ? directOrder.total : cart.reduce((sum, item) => sum + (Number(item.price) * item.qty), 0);
 
-    // Let's go with: Cart Items + Current Product (if not in cart).
-    // If Current Product IS in cart, we just use the Cart set (so we don't duplicate).
-
-    // State to track if the user manually dismisses the "current product" (Buy Now item)
-    // This is needed because the "Buy Now" item might not be in the global cart yet.
-    const [isProductDismissed, setIsProductDismissed] = useState(false);
-
-    let items = [...cart];
-    // Only add current product if:
-    // 1. It's not already in the cart (to avoid dupes)
-    // 2. It hasn't been dismissed by the user
-    const isCurrentProductInCart = cart.some(item => item.id === product.id);
-
-    if (!isCurrentProductInCart && !isProductDismissed) {
-        items.push({ ...product, qty: 1 });
-    }
-
-    // Calculate totals
-    const productTotal = items.reduce((sum, item) => sum + (Number(item.price) * item.qty), 0);
-    const finalTotal = productTotal + shippingCost;
+    const finalTotal = itemsTotal + shippingCost;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -100,7 +83,7 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                 city: formData.city,
                 address: formData.address
             },
-            items: items.map(i => `${i.title} (x${i.qty})`).join(", "),
+            items: itemsToOrder.map(i => `${i.title} (x${i.qty})${i.selectedVariant ? ` [${i.selectedVariant}]` : ''}`).join(", "),
             total: finalTotal, // Use Final Total including shipping
             shippingCost: shippingCost,
             shopSource: settings.storeName || 'Unknown Shop',
@@ -114,7 +97,7 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
 
             // Save using custom ID (not push ID)
             try {
-                await set(ref(rtdb, `orders/${safeStoreName}/${orderID}`), { ...orderData, id: orderID });
+                await set(dbRef(rtdb, `orders/${safeStoreName}/${orderID}`), { ...orderData, id: orderID });
             } catch (rtdbError) {
                 console.error("RTDB Write Failed (Permission/Network)", rtdbError);
                 // Continue execution - don't block user
@@ -129,7 +112,8 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                 const customerId = rawPhone.startsWith('212') ? rawPhone : `212${rawPhone.replace(/^0+/, '')}`;
 
                 // Get Product Categories (Interests)
-                const currentInterests = Array.from(new Set(items.map(i => i.category)));
+                // @ts-ignore
+                const currentInterests = Array.from(new Set(itemsToOrder.map(i => i.category || "General")));
 
                 const { doc, setDoc, getDoc, serverTimestamp, increment, arrayUnion } = await import("firebase/firestore");
                 const { db } = await import("@/lib/firebase");
@@ -172,7 +156,7 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
 
             try {
                 // Ensure items string is generated exactly as needed
-                const itemsString = items.map(i => `${typeof i.title === 'string' ? i.title : (i.title as any)[locale] || (i.title as any)['en']} (x${i.qty})`).join(", ");
+                const itemsString = itemsToOrder.map((i: any) => `${typeof i.title === 'string' ? i.title : (i.title as any)[locale] || (i.title as any)['en']} (x${i.qty})`).join(", ");
 
                 await fetch('/api/order', {
                     method: 'POST',
@@ -200,7 +184,6 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             // if (window.fbq) { ... }
 
             // B. Server-Side CAPI (The 100% Tracking Fix)
-            // B. Server-Side CAPI (The 100% Tracking Fix)
             try {
                 fetch('/api/fb-conversion', {
                     method: 'POST',
@@ -217,8 +200,8 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                         custom_data: {
                             value: finalTotal,
                             currency: 'MAD',
-                            content_ids: items.map(i => i.id),
-                            content_name: items.map(i => i.title).join(', ')
+                            content_ids: itemsToOrder.map((i: any) => i.id),
+                            content_name: itemsToOrder.map((i: any) => i.title).join(', ')
                         }
                     })
                 });
@@ -232,19 +215,16 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                 window.ttq.track('PlaceAnOrder', { value: finalTotal, currency: 'MAD' });
             }
 
-            // 4. Success UI
-            Swal.fire({
-                icon: "success",
-                title: t('success_title'),
-                text: t('success_desc'),
-                confirmButtonColor: "#10b981",
-                confirmButtonText: t('thank_you')
-            });
+            // 4. Redirect to Thank You Page
+            router.push(`/${locale}/thank-you?orderId=${orderID}&total=${finalTotal}`);
 
             // Reset form
             setFormData({ name: "", phone: "", city: "", address: "" });
-            // Clear Cart
-            clearCart();
+
+            // Clear Cart ONLY if strictly using cart (not direct order)
+            if (!directOrder) {
+                clearCart();
+            }
 
         } catch (e) {
             console.error(e);
@@ -265,12 +245,13 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             // @ts-ignore
             if (window.fbq) {
                 // @ts-ignore
+                // @ts-ignore
                 window.fbq('track', 'InitiateCheckout', {
-                    content_ids: items.map(i => i.id),
+                    content_ids: itemsToOrder.map((i: any) => i.id),
                     content_type: 'product',
                     currency: 'MAD',
                     value: finalTotal,
-                    num_items: items.length
+                    num_items: itemsToOrder.length
                 });
             }
 
@@ -278,8 +259,9 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             // @ts-ignore
             if (window.ttq) {
                 // @ts-ignore
+                // @ts-ignore
                 window.ttq.track('InitiateCheckout', {
-                    contents: items.map(i => ({
+                    contents: itemsToOrder.map((i: any) => ({
                         content_id: i.id,
                         content_name: i.title,
                         quantity: i.qty,
@@ -332,25 +314,40 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                 </div>
             </div>
             <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1 mr-1">{t('address')}</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1 mr-1">
+                    {t('address')} <span className="text-gray-400 font-normal">({locale === 'ar' ? 'اختياري' : 'Optional'})</span>
+                </label>
                 <input
                     value={formData.address}
                     onChange={e => setFormData({ ...formData, address: e.target.value })}
                     className="w-full p-3.5 border rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition font-bold text-gray-900 shadow-sm"
-                    placeholder={t('address')}
+                    placeholder={locale === 'ar' ? 'العنوان (اختياري)' : 'Address (Optional)'}
                 />
             </div>
 
+            {/* Trust Badges (CRO) */}
+            <div className="grid grid-cols-2 gap-3 py-2">
+                <div className="flex items-center gap-2 text-xs text-gray-500 bg-white p-2 rounded-lg border border-gray-100">
+                    <Truck className="w-4 h-4 text-emerald-600" />
+                    <span>{locale === 'ar' ? 'توصيل سريع' : 'Fast Delivery'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 bg-white p-2 rounded-lg border border-gray-100">
+                    <BadgeCheck className="w-4 h-4 text-emerald-600" />
+                    <span>{locale === 'ar' ? 'ضمان الجودة' : 'Quality Guarantee'}</span>
+                </div>
+            </div>
+
             {/* MINI-CART SUMMARY */}
-            {/* CART SUMMARY - Improved UI */}
-            {items.length > 0 && (
+            {/* Show only if using Cart (directOrder usually implies "What you see is what you get" above) */}
+            {/* User requested to REMOVE summary for Inline Form (directOrder) */}
+            {!directOrder && itemsToOrder.length > 0 && (
                 <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-4 animate-in fade-in zoom-in duration-300">
                     <h4 className="flex items-center justify-between text-xs font-bold text-gray-400 uppercase tracking-wider border-b pb-2">
-                        <span>Your Order ({items.length})</span>
+                        <span>Your Order ({itemsToOrder.length})</span>
                     </h4>
 
                     <div className="space-y-4 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
-                        {items.map((item, idx) => (
+                        {itemsToOrder.map((item: any, idx: number) => (
                             <div key={`${item.id}-${idx}`} className="flex items-start gap-3 pb-4 border-b border-gray-50 last:border-0 last:pb-0 relative group">
 
                                 {/* Image */}
@@ -392,25 +389,23 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                                     <span className="text-emerald-700 font-bold text-sm">{Number(item.price) * item.qty} DH</span>
                                 </div>
 
-                                {/* Remove Button (Right-aligned, mostly visible on hover on desktop) */}
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-
-                                        // Logic: If in cart, remove from cart. If it's the current "Buy Now" product, dismiss it locally.
-                                        if (cart.some(c => c.id === item.id)) {
-                                            removeFromCart(item.id);
-                                        } else if (item.id === product.id) {
-                                            setIsProductDismissed(true);
-                                        }
-                                    }}
-                                    className="absolute -top-1 -right-1 md:static md:top-auto md:right-auto text-gray-300 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
-                                    title="Remove item"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
+                                {/* Remove Button (Only for Cart mode) */}
+                                {!directOrder && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            if (cart.some(c => c.id === item.id)) {
+                                                removeFromCart(item.id);
+                                            }
+                                        }}
+                                        className="absolute -top-1 -right-1 md:static md:top-auto md:right-auto text-gray-300 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                        title="Remove item"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -421,7 +416,7 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
             <div className="pt-2 border-t border-gray-100 space-y-2">
                 <div className="flex justify-between items-center text-sm font-medium text-gray-600">
                     <span>{tCommon('price') || "Price"}:</span>
-                    <span>{productTotal} DH</span>
+                    <span>{itemsTotal} DH</span>
                 </div>
                 <div className="flex justify-between items-center text-sm font-medium text-gray-600">
                     <span className="flex items-center gap-1"><Truck className="w-4 h-4" /> {tCommon('shipping') || "Shipping"}:</span>
@@ -446,6 +441,18 @@ export default function CheckoutForm({ product, className = "" }: CheckoutFormPr
                     </>
                 }
             </button>
+
+            {/* Secondary: Add to Cart (Only if prop provided) */}
+            {onAddToCart && (
+                <button
+                    type="button"
+                    onClick={onAddToCart}
+                    className="w-full bg-transaprent border-2 border-emerald-600 text-emerald-700 py-3 rounded-xl font-bold text-lg hover:bg-emerald-50 active:scale-95 transition flex items-center justify-center gap-2 mt-3"
+                >
+                    <span>{locale === 'ar' ? 'أضف إلى السلة' : 'Add to Cart'}</span>
+                </button>
+            )}
+
             <p className="text-center text-xs text-gray-400 mt-2 flex items-center justify-center gap-1">
                 {t('cod_hint')}
             </p>

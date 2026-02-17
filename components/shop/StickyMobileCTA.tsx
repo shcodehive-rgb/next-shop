@@ -49,7 +49,7 @@ export default function StickyMobileCTA({ product, onBuyNow }: StickyMobileCTAPr
                 {/* Thumb */}
                 <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
                     <Image
-                        src={product.image || "/placeholder.png"}
+                        src={product.image || "/placeholder.svg"}
                         alt={displayTitle}
                         fill
                         className="object-cover"

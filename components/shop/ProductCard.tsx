@@ -60,7 +60,7 @@ export default function ProductCard({ product, onClick, priority = false }: Prod
       {/* 1. IMAGE CONTAINER (SQUARE & WHITE) */}
       <div className="relative aspect-square w-full bg-white overflow-hidden rounded-t-xl border-b border-gray-50">
         <Image
-          src={imageSrc || '/placeholder.png'} // Fallback
+          src={imageSrc || '/placeholder.svg'} // Fallback
           alt={displayTitle}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-110"

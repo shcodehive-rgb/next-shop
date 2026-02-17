@@ -83,6 +83,8 @@
         "dashboard": "لوحة التحكم",
         "customers": "الزبناء",
         "searchCustomers": "بحث عن زبون",
+        "searchOrders": "بحث في الطلبات...",
+        "allOrders": "جميع الطلبات",
         "allInterests": "جميع الاهتمامات",
         "sortBySpent": "ترتيب حسب الإنفاق",
         "sortByOrders": "ترتيب حسب الطلبات",

@@ -19,6 +19,7 @@ export async function POST(req: Request) {
         } else if (orderDetails) {
             // Case B: Client sent details, we build the message (e.g. CheckoutModal)
             message = `📦 طلبية جديدة!\n\n👤 السمية: ${orderDetails.name}\n📱 التيليفون: ${orderDetails.phone}\n🛍️ المنتجات: ${orderDetails.items || 'Unknown'}\n💰 المجموع: ${orderDetails.total} DH\n🏙️ المدينة: ${orderDetails.city}\n🏠 العنوان: ${orderDetails.client?.address || 'N/A'}`;
+
         } else {
             console.error("❌ Missing payload info");
             return NextResponse.json({ error: "Invalid Data" }, { status: 400 });

@@ -1,80 +1,112 @@
 "use client";
 
 import { useShop } from "@/context/ShopContext";
-import { Facebook, Instagram, Phone, MapPin, Heart } from "lucide-react";
+import { Facebook, Instagram, Heart, ShieldCheck, Truck, Scale, Phone } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useTranslations } from "next-intl";
 
 export default function Footer() {
     const { settings } = useShop();
-    const [cmsPages, setCmsPages] = useState<any[]>([]);
-    const t = useTranslations('Footer');
-    const tNavbar = useTranslations('Navbar');
-
-    useEffect(() => {
-        getDocs(collection(db, "pages")).then(snap => {
-            setCmsPages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
-    }, []);
+    const t = useTranslations('Footer'); // Ensure you have translations or use hardcoded Arabic if preferred by user request "Arabic Footer"
 
     return (
-        <footer className="font-tajawal mt-12 pb-8 bg-gray-900 text-center text-gray-300">
+        <footer className="bg-gray-900 text-gray-300 pt-16 pb-8 font-tajawal border-t border-gray-800">
+            <div className="container mx-auto px-6 max-w-6xl">
 
-            {/* Seamless Content Area */}
-            <div className="max-w-4xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 pb-8 text-center md:text-right border-b border-gray-800 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12 text-center md:text-right">
 
-                {/* Brand - Subtle */}
-                <div>
-                    <h2 className="text-xl font-black text-white mb-2">{settings.storeName}</h2>
-                    <p className="text-gray-400 text-xs leading-relaxed">
-                        {t('description')}
-                    </p>
-                </div>
+                    {/* BRAND COL */}
+                    <div className="space-y-4">
+                        <Link href="/" className="text-2xl font-black text-white block hover:text-emerald-400 transition">
+                            {settings.storeName}
+                        </Link>
+                        <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto md:mx-0">
+                            {settings.storeName} - وجهتكم الأولى للتسوق الإلكتروني. نقدم لكم أفضل المنتجات بجودة عالية وخدمة توصيل سريعة.
+                        </p>
+                        <div className="flex gap-4 justify-center md:justify-start pt-2">
+                            <a href="#" className="p-2.5 bg-gray-800 rounded-lg hover:bg-emerald-600 hover:text-white transition group">
+                                <Facebook className="w-5 h-5 group-hover:scale-110 transition" />
+                            </a>
+                            <a href="#" className="p-2.5 bg-gray-800 rounded-lg hover:bg-emerald-600 hover:text-white transition group">
+                                <Instagram className="w-5 h-5 group-hover:scale-110 transition" />
+                            </a>
+                        </div>
+                    </div>
 
-                {/* Quick Links - Compact */}
-                <div className="flex flex-col gap-2 text-sm">
-                    <h3 className="font-bold text-emerald-400 mb-1">{t('quick_links')}</h3>
-                    <div className="flex flex-col gap-1 text-gray-400">
-                        <Link href="/" className="hover:text-white transition">{tNavbar('home')}</Link>
-                        <Link href="/admin" className="hover:text-white transition">{tNavbar('admin')}</Link>
+                    {/* COL 1: Quick Links */}
+                    <div>
+                        <h3 className="text-white font-bold text-lg mb-6 relative inline-block">
+                            روابط سريعة
+                            <span className="absolute -bottom-2 right-0 w-12 h-1 bg-emerald-500 rounded-full"></span>
+                        </h3>
+                        <ul className="space-y-3">
+                            <li>
+                                <Link href="/" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
+                                    الصفحة الرئيسية
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/#products" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
+                                    المنتجات
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/contact" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
+                                    تواصل معنا
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* COL 2: Our Policies */}
+                    <div>
+                        <h3 className="text-white font-bold text-lg mb-6 relative inline-block">
+                            سياساتنا
+                            <span className="absolute -bottom-2 right-0 w-12 h-1 bg-emerald-500 rounded-full"></span>
+                        </h3>
+                        <ul className="space-y-3">
+                            <li>
+                                <Link href="/policies/refund" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
+                                    سياسة الإرجاع والاستبدال
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/policies/privacy" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
+                                    سياسة الخصوصية
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/policies/cod" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
+                                    سياسة الدفع عند الاستلام
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/policies/shipping" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
+                                    سياسة الشحن والتوصيل
+                                </Link>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
-                {/* Pages (Dynamic CMS) */}
-                <div className="flex flex-col gap-2 text-sm">
-                    <h3 className="font-bold text-emerald-400 mb-1">{t('information')}</h3>
-                    <div className="flex flex-col gap-1 text-gray-400">
-                        {cmsPages.map(page => (
-                            <Link key={page.id} href={`/pages/${page.slug}`} className="hover:text-white transition">
-                                {page.title}
-                            </Link>
-                        ))}
-                        {cmsPages.length === 0 && <span className="text-gray-600 text-xs">...</span>}
+                {/* Bottom Bar */}
+                <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+                    <p>© {new Date().getFullYear()} {settings.storeName}. جميع الحقوق محفوظة.</p>
+
+                    <div className="flex items-center gap-1">
+                        <span>Made with</span>
+                        <Heart className="w-4 h-4 text-red-500 fill-red-500 animate-pulse" />
+                        <span>by</span>
+                        <span className="text-white font-bold">AminaPlatform</span>
                     </div>
                 </div>
-
-                {/* Socials - Clean */}
-                <div className="flex flex-col items-center md:items-start gap-2">
-                    <h3 className="font-bold text-emerald-400 mb-1">{t('follow_us')}</h3>
-                    <div className="flex gap-4">
-                        <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-emerald-600 hover:text-white transition"><Facebook className="w-4 h-4" /></a>
-                        <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-emerald-600 hover:text-white transition"><Instagram className="w-4 h-4" /></a>
-                    </div>
-                </div>
-            </div>
-
-            {/* Copyright - Very Subtle & Close */}
-            <div className="text-gray-500 text-[10px] flex flex-col items-center gap-2">
-                <p>{t('rights')} © {new Date().getFullYear()} {settings.storeName}</p>
-                <p className="flex items-center gap-1 opacity-80">
-                    Made with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> by
-                    <a href="https://github.com/amina-platform" className="text-emerald-400 font-bold hover:underline">
-                        AminaPlatform
-                    </a>
-                </p>
             </div>
         </footer>
     );

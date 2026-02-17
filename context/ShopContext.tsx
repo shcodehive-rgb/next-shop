@@ -10,7 +10,8 @@ import {
     deleteDoc,
     updateDoc
 } from "firebase/firestore";
-import { db } from "@/lib/firebase"; // تأكدي أن هذا المسار صحيح
+import { db, rtdb } from "@/lib/firebase"; // تأكدي أن هذا المسار صحيح
+import { ref, onValue } from "firebase/database";
 
 // --- TYPES ---
 export interface Review {
@@ -19,6 +20,12 @@ export interface Review {
     rating: number; // 1-5
     comment: string;
     date: string;
+}
+
+export interface Bundle {
+    qty: number;
+    price: number;
+    badgeText?: string;
 }
 
 export interface Product {
@@ -30,7 +37,14 @@ export interface Product {
     variants?: string[]; // Array of variants (e.g. ["S", "M", "L"])
     category: string;
     description?: string;
-    cost?: string;
+    highlights?: string; // Stored as newline-separated string
+    howToUse?: string;
+    ingredients?: string;
+    videoUrl?: string;
+    richContentImages?: string[];
+    bundles?: Bundle[];
+    hasVariants?: boolean;
+    cost?: string; // Stored as newline-separated string
     stock?: number;
     wholesalePrice?: string;
     minWholesaleQty?: number;
@@ -42,6 +56,9 @@ export interface Product {
     discountLabel?: string;
     shipping_type?: 'free' | 'standard'; // Free shipping or standard city rate
     visible?: boolean;
+
+    metaTitle?: string;
+    metaDescription?: string;
 }
 
 export interface Customer {
@@ -80,6 +97,7 @@ export interface SiteSettings {
     heroImage: string;
     facebookPixelId?: string;
     tiktokPixelId?: string;
+    whatsappPhone?: string;
     facebookPixelBackup1?: string;
     facebookPixelBackup2?: string;
     facebookAccessToken?: string;
@@ -95,9 +113,31 @@ export interface SiteSettings {
     shippingMode?: 'free' | 'custom';
 }
 
+export interface Order {
+    id: string;
+    client: {
+        name: string;
+        phone: string;
+        city: string;
+        address?: string;
+    };
+    items: string; // "Product A (x1), Product B (x2)"
+    total: number;
+    status: string;
+    createdAt: string;
+    dateLocal: string;
+    storeName: string;
+    telegramId?: string;
+    telegramNotificationId?: string;
+    whatsappPhone?: string;
+    deliveryTime?: string;
+    shopSource?: string;
+}
+
 interface ShopContextType {
     products: Product[];
     categories: Category[];
+    orders: Order[];
     customers: Customer[];
     cart: CartItem[];
     settings: SiteSettings;
@@ -156,6 +196,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
+    const [orders, setOrders] = useState<Order[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
     const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
@@ -252,7 +293,12 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        // Cleanup
+        // G. Listen to Orders (RTDB)
+        // Store Name for path: settings.storeName might not be loaded yet, but we can try observing it.
+        // Actually, better to listen inside a separate useEffect that depends on [settings.storeName]
+        // BUT, settings are loaded in step E. Let's do it here if we can, or separate.
+        // Since we want ALL orders for this store, we need the sanitized store name.
+
         return () => {
             unsubProducts();
             unsubCategories();
@@ -261,6 +307,29 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             unsubSettings();
         };
     }, []);
+
+    // 🔥 2. ORDERS DATA SYNC (Depends on Settings)
+    useEffect(() => {
+        if (!settings.storeName) return;
+
+        const safeStoreName = settings.storeName.replace(/[.#$/\[\]]/g, "_");
+        const ordersRef = ref(rtdb, `orders/${safeStoreName}`);
+
+        const unsubOrders = onValue(ordersRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // Flatten: object of objects -> array
+                const loadedOrders = Object.values(data) as Order[];
+                // Optional: Sort by date desc
+                loadedOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setOrders(loadedOrders);
+            } else {
+                setOrders([]);
+            }
+        });
+
+        return () => unsubOrders();
+    }, [settings.storeName]);
 
     // Effect to Hydrate Cart Images when Products Load
     useEffect(() => {
@@ -365,7 +434,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             const existing = prev.find((i) => i.id === p.id && i.selectedVariant === variant);
             let newCart;
             if (existing) {
-                newCart = prev.map((i) => (i.id === p.id && i.selectedVariant === variant ? { ...i, qty: i.qty + qty } : i));
+                newCart = prev.map((i) => (i.id === p.id && i.selectedVariant === variant ? { ...i, qty: i.qty + qty, price: p.price } : i));
             } else {
                 newCart = [...prev, { ...p, qty, selectedVariant: variant }];
             }
@@ -488,15 +557,17 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 products,
                 categories,
                 customers,
+                orders,
                 cart,
+                shippingRates: [], // TODO: Implement shipping rates state if needed or fetch from DB
+                addToCart,
                 settings,
-                shippingRates,
                 addProduct,
                 updateProduct,
                 deleteProduct,
                 addCategory,
                 deleteCategory,
-                addToCart,
+
                 removeFromCart,
                 updateCartQty,
                 clearCart,

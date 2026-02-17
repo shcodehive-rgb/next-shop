@@ -16,23 +16,7 @@ export default function Navbar() {
     const inputRef = useRef<HTMLInputElement>(null);
     const t = useTranslations('Navbar');
 
-    const handleAdminLogin = async () => {
-        const { value: pin } = await Swal.fire({
-            title: "Admin Access",
-            input: "password",
-            inputLabel: "Enter PIN",
-            inputPlaceholder: "1234",
-            showCancelButton: true,
-            confirmButtonColor: "#10b981",
-            cancelButtonText: "Cancel"
-        });
-
-        if (pin === "1234") {
-            router.push("/admin");
-        } else if (pin) {
-            Swal.fire("Error", "Wrong PIN", "error");
-        }
-    };
+    // Admin Login Removed for Storefront Public Access
 
     // Auto focus when opening search
     useEffect(() => {
@@ -47,9 +31,7 @@ export default function Navbar() {
 
                 {/* Left Side: Menu & Logo */}
                 <div className="flex items-center gap-4">
-                    <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-full md:hidden">
-                        <Menu className="w-5 h-5" />
-                    </button>
+                    {/* Mobile Menu Removed */}
                     <Link href="/" className="text-lg font-bold text-gray-800 tracking-tight">
                         {settings.storeName}
                     </Link>
@@ -83,14 +65,7 @@ export default function Navbar() {
                         <Search className="w-5 h-5" />
                     </button>
 
-                    {/* Admin Lock */}
-                    <button
-                        onClick={handleAdminLogin}
-                        className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-full transition"
-                        title={t('admin')}
-                    >
-                        <Lock className="w-5 h-5" />
-                    </button>
+                    {/* Admin Lock - REMOVED for Public Storefront */}
 
                     {/* Cart */}
                     <button

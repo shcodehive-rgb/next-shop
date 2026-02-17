@@ -83,6 +83,8 @@
         "dashboard": "Dashboard",
         "customers": "Customers",
         "searchCustomers": "Search Customers",
+        "searchOrders": "Search Orders...",
+        "allOrders": "All Orders",
         "allInterests": "All Interests",
         "sortBySpent": "Sort by Spent",
         "sortByOrders": "Sort by Orders",

@@ -14,25 +14,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 export default async function RootPage() {
-  // 1. Default Fallback
-  let defaultLocale = 'ar';
-
-  try {
-    // 2. Try fetching from Firestore
-    // Note: getDoc on Server Component works if environment is Node.js
-    const settingsRef = doc(db, "settings", "general");
-    const snap = await getDoc(settingsRef);
-
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data.default_locale) {
-        defaultLocale = data.default_locale;
-      }
-    }
-  } catch (error) {
-    console.error("Error fetching default locale:", error);
-  }
-
-  // 3. Redirect
-  redirect(`/${defaultLocale}`);
+  // STRICTLY ENFORCE ARABIC (AR)
+  // We ignore Firestore settings for now to ensure all users go to /ar
+  redirect('/ar');
 }
