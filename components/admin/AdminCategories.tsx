@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Plus, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import imageCompression from 'browser-image-compression';
 import { getProductTitle } from "@/lib/utils";
 import { useTranslations } from 'next-intl';
@@ -50,23 +49,31 @@ export default function AdminCategories() {
         if (!files || files.length === 0) return;
         setLoading(true);
         try {
-            toast.info("Uploading...");
+            toast.info("Processing Image...");
             const file = files[0];
+
+            // 1. Compress Image (Client-Side)
+            // Goal: Maintain quality but reduce size significantly (e.g., < 100KB for Firestore)
             const compressed = await imageCompression(file, {
-                maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true, initialQuality: 0.8
+                maxSizeMB: 0.1, // Target ~100KB
+                maxWidthOrHeight: 600,
+                useWebWorker: true,
+                initialQuality: 0.7,
+                fileType: "image/webp" // efficient format
             });
 
-            // Upload to Storage
-            const filename = `categories/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-            const storageRef = ref(storage, filename);
-            const snapshot = await uploadBytes(storageRef, compressed);
-            const downloadURL = await getDownloadURL(snapshot.ref);
+            // 2. Convert to Base64 (Data URL)
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                setCatImage(base64String); // Set state directly
+                toast.success("Image Ready (Saved as Text)");
+            };
+            reader.readAsDataURL(compressed);
 
-            setCatImage(downloadURL);
-            toast.success("Image Uploaded");
-        } catch (e) {
-            console.error(e);
-            toast.error("Error uploading image");
+        } catch (e: any) {
+            console.error("Image Processing Error:", e);
+            toast.error(`Error processing image: ${e.message || "Unknown error"}`);
         } finally {
             setLoading(false);
         }
@@ -95,13 +102,21 @@ export default function AdminCategories() {
 
                     <div className="w-32">
                         <label className="block text-xs font-bold text-gray-500 mb-1">{t('category_image')}</label>
-                        <div className="h-12 w-full bg-white border border-dashed border-gray-300 rounded-lg flex items-center justify-center relative hover:bg-emerald-50 cursor-pointer overflow-hidden group">
-                            {catImage ? (
-                                <img src={catImage} className="w-full h-full object-cover" />
+                        <div className={`h-12 w-full bg-white border border-dashed border-gray-300 rounded-lg flex items-center justify-center relative hover:bg-emerald-50 cursor-pointer overflow-hidden group ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+                            {loading ? (
+                                <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
+                            ) : catImage ? (
+                                <img src={catImage} className="w-full h-full object-cover" alt="Category Preview" />
                             ) : (
                                 <ImageIcon className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition" />
                             )}
-                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleImageUpload(e.target.files)} />
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                onChange={e => handleImageUpload(e.target.files)}
+                                disabled={loading}
+                            />
                         </div>
                     </div>
 

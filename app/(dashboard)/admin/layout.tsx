@@ -62,8 +62,8 @@ export default async function AdminRootLayout({
     // }
 
     return (
-        <html lang={lang} dir={dir}>
-            <body className={`${tajawal.className} bg-gray-50 text-gray-900 antialiased`}>
+        <html lang={lang} dir={dir} suppressHydrationWarning>
+            <body className={`${tajawal.className} bg-gray-50 text-gray-900 antialiased`} suppressHydrationWarning>
                 <NextIntlClientProvider messages={messages} locale={lang}>
                     <ShopProvider>
                         {children}

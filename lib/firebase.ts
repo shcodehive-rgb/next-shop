@@ -11,7 +11,8 @@ const firebaseConfig = {
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "546339573391",
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:546339573391:web:fb6eea45de143c696eeafa",
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-22Z7G0P46H",
-    databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || "https://amina-saas-default-rtdb.firebaseio.com"
+    databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || "https://amina-saas-default-rtdb.firebaseio.com",
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "amina-saas.firebasestorage.app"
 };
 
 import { getFirestore } from "firebase/firestore";
