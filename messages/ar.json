@@ -142,6 +142,10 @@
         "add_image": "إضافة",
         "category_name": "اسم التصنيف",
         "category_image": "صورة التصنيف",
+        "highlights": "أهم المميزات",
+        "howToUse": "طريقة الاستعمال",
+        "ingredients": "المكونات / المواد",
+        "bundle_pricing": "عروض الجملة (Pack)",
         "add_category": "إضافة تصنيف",
         "manage_categories": "إدارة التصنيفات",
         "returning": "زبون سابق",
@@ -205,5 +209,12 @@
         "translating": "جاري الترجمة التلقائية...",
         "auto_translate_hint": "يترجم تلقائياً لجميع اللغات",
         "product_name_placeholder": "أدخل بأي لغة (مثال: Montre Luxe)"
+    },
+    "Collection": {
+        "title": "المجموعة",
+        "products_count": "منتج",
+        "empty": "لا توجد منتجات في هذا القسم حالياً.",
+        "back": "العودة للرئيسية",
+        "filter": "تصفية"
     }
 }

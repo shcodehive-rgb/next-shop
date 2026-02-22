@@ -24,10 +24,10 @@ export default function Footer() {
                             {settings.storeName} - وجهتكم الأولى للتسوق الإلكتروني. نقدم لكم أفضل المنتجات بجودة عالية وخدمة توصيل سريعة.
                         </p>
                         <div className="flex gap-4 justify-center md:justify-start pt-2">
-                            <a href="#" className="p-2.5 bg-gray-800 rounded-lg hover:bg-emerald-600 hover:text-white transition group">
+                            <a href="https://www.facebook.com/profile.php?id=61579754581519" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-800 rounded-lg hover:bg-emerald-600 hover:text-white transition group">
                                 <Facebook className="w-5 h-5 group-hover:scale-110 transition" />
                             </a>
-                            <a href="#" className="p-2.5 bg-gray-800 rounded-lg hover:bg-emerald-600 hover:text-white transition group">
+                            <a href="https://www.instagram.com/luxestore2026/" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-800 rounded-lg hover:bg-emerald-600 hover:text-white transition group">
                                 <Instagram className="w-5 h-5 group-hover:scale-110 transition" />
                             </a>
                         </div>

@@ -129,6 +129,10 @@
         "add_image": "Ajouter",
         "category_name": "Nom de Catégorie",
         "category_image": "Image de Catégorie",
+        "highlights": "Points Forts",
+        "howToUse": "Mode d'emploi",
+        "ingredients": "Ingrédients/Matériaux",
+        "bundle_pricing": "Prix de Gros (Pack)",
         "add_category": "Ajouter Catégorie",
         "manage_categories": "Gérer les Catégories",
         "delete_confirm": "Êtes-vous sûr de vouloir supprimer?",
@@ -190,5 +194,12 @@
         "translating": "Traduction automatique...",
         "auto_translate_hint": "Traduit automatiquement dans toutes les langues",
         "product_name_placeholder": "Entrez dans n'importe quelle langue (ex: Montre Luxe)"
+    },
+    "Collection": {
+        "title": "Collection",
+        "products_count": "produit",
+        "empty": "Aucun produit dans cette catégorie pour le moment.",
+        "back": "Retour à l'accueil",
+        "filter": "Filtrer"
     }
 }

@@ -11,6 +11,7 @@ import FeaturesBar from "@/components/FeaturesBar";
 import HomepageReviews from "@/components/HomepageReviews";
 import StoreReviews from "@/components/StoreReviews";
 import CategoryProducts from "@/components/shop/CategoryProducts";
+import MidPageSlider from "@/components/shop/MidPageSlider";
 
 interface HomeClientProps {
     initialProducts?: Product[];
@@ -118,7 +119,10 @@ export default function HomeClient({ initialProducts, initialCategories, initial
                 />
             )}
 
-            {/* 6. HOMEPAGE REVIEWS (Social Proof Screenshots) */}
+            {/* 6. MID-PAGE NETFLIX SLIDER (products tagged showInMidPageSlider) */}
+            <MidPageSlider products={products} />
+
+            {/* 7. HOMEPAGE REVIEWS (Social Proof Screenshots) */}
             <HomepageReviews />
 
             {/* 7. STORE REVIEWS (Text & Star Ratings) */}

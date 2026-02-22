@@ -131,6 +131,10 @@
         "add_image": "Add",
         "category_name": "Category Name",
         "category_image": "Category Image",
+        "highlights": "Highlights",
+        "howToUse": "How to Use",
+        "ingredients": "Ingredients/Materials",
+        "bundle_pricing": "Bundle Pricing",
         "add_category": "Add Category",
         "manage_categories": "Manage Categories",
         "delete_confirm": "Are you sure you want to delete?",
@@ -192,5 +196,12 @@
         "translating": "Auto-translating...",
         "auto_translate_hint": "Auto-translates to all languages",
         "product_name_placeholder": "Enter in any language (e.g., Montre Luxe)"
+    },
+    "Collection": {
+        "title": "Collection",
+        "products_count": "product",
+        "empty": "No products in this category yet.",
+        "back": "Back to Home",
+        "filter": "Filter"
     }
 }

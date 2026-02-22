@@ -1,5 +1,4 @@
-import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
+import { adminFirestore } from "@/lib/firebase-admin"; // Use Admin SDK
 import { unstable_cache } from "next/cache";
 
 export interface CategoryData {
@@ -10,29 +9,34 @@ export interface CategoryData {
 async function fetchCategoryData(categoryId: string): Promise<CategoryData> {
     try {
         console.log(`⚡ [SSR] Fetching Category: ${categoryId}`);
-        const categoryRef = doc(db, "categories", categoryId);
+        // Use Admin SDK methods
+        const categoryRef = adminFirestore.collection("categories").doc(categoryId);
+        const productsRef = adminFirestore.collection("products").limit(500);
 
-        // ⚠️ FALLBACK STRATEGY: Fetch recent 500 products and filter in memory
-        // This bypasses potential Firestore Index missing errors or type mismatches (string vs number)
-        const productsQuery = query(collection(db, "products"), limit(500));
+        // DEBUG: Check Service Account Project ID
+        const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+        const serviceAccount = serviceAccountRaw ? JSON.parse(serviceAccountRaw) : null;
+        console.log(`🔍 [Debug] NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
+        console.log(`🔍 [Debug] Service Account Project ID: ${serviceAccount?.project_id}`);
+        console.log(`🔍 [Debug] Admin SDK Ready.`);
+
 
         const [categorySnap, productsSnap] = await Promise.all([
-            getDoc(categoryRef),
-            getDocs(productsQuery)
+            categoryRef.get(),
+            productsRef.get()
         ]);
 
         console.log(`🔍 [Debug] CategoryId target: ${categoryId}`);
         console.log(`🔍 [Debug] Total Products Fetched: ${productsSnap.size}`);
         if (!productsSnap.empty) {
             const firstDoc = productsSnap.docs[0].data();
-            console.log(`🔍 [Debug] First Product Sample: ID=${productsSnap.docs[0].id}, Category=${firstDoc.category}, Visible=${firstDoc.visible}`);
+            console.log(`🔍 [Debug] First Product Sample: ID=${productsSnap.docs[0].id}, Category=${firstDoc?.category}, Visible=${firstDoc?.visible}`);
         } else {
-            console.log(`⚠️ [Debug] No products matches 'category' == '${categoryId}'`);
-            // Fallback? Is category mismatching?
+            console.warn(`⚠️ [Debug] No products found in DB (Limit 500)`);
         }
 
 
-        const categoryData = categorySnap.exists() ? categorySnap.data() : null;
+        const categoryData = categorySnap.exists ? categorySnap.data() : null;
         const category: any = categoryData ? { id: categorySnap.id, ...categoryData } : null;
 
         const safeImage = (img: any) => {
@@ -106,11 +110,4 @@ async function fetchCategoryData(categoryId: string): Promise<CategoryData> {
     }
 }
 
-// Cache for 60 seconds
-// v3: Fixed cache key reference
-// This comment was added to register a file change.
-export const getCategoryData = unstable_cache(
-    async (id: string) => fetchCategoryData(id),
-    ['category-data-v4'],
-    { revalidate: 1, tags: ['category-data'] }
-);
+export const getCategoryData = fetchCategoryData;

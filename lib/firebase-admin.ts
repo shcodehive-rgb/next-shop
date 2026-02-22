@@ -60,6 +60,7 @@ function createAdminApp() {
 }
 
 const adminApp = createAdminApp();
+const adminFirestore = admin.firestore(adminApp);
 const adminStorage = admin.storage(adminApp);
 
-export { adminStorage };
+export { adminStorage, adminFirestore, adminApp };

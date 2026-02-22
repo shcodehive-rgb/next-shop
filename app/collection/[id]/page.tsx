@@ -1,63 +1,8 @@
-"use client";
+import { redirect } from 'next/navigation';
 
-import { useShop } from "@/context/ShopContext";
-import ProductGrid from "@/components/ProductGrid";
-import { use } from "react";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-
-interface CollectionPageProps {
-    params: Promise<{ id: string }>;
-}
-
-export default function CollectionPage({ params }: CollectionPageProps) {
-    const { id } = use(params);
-    const { products, categories } = useShop();
-
-    // Derive data during render
-    const category = categories.find((c) => c.id === id);
-    let categoryName: string;
-
-    if (category) {
-        if (typeof category.name === 'object') {
-            categoryName = (category.name as any)['ar'] || (category.name as any)['en'] || (category.name as any)['fr'] || "Collection";
-        } else {
-            categoryName = category.name;
-        }
-    } else {
-        categoryName = categories.length > 0 ? "Category Not Found" : "Loading...";
-    }
-
-    // Filter logic
-    const categoryProducts = categoryName && categoryName !== "Category Not Found" && categoryName !== "Loading..."
-        ? products.filter(p => p.category === categoryName)
-        : [];
-
-    return (
-        <div className="min-h-screen bg-white pb-20 font-tajawal">
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b py-6 mb-8">
-                <div className="container mx-auto px-4 flex items-center gap-4">
-                    <Link href="/" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition">
-                        <ArrowRight className="w-5 h-5 text-gray-600" />
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-900">{categoryName}</h1>
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="container mx-auto px-4">
-                {categoryProducts.length > 0 ? (
-                    <ProductGrid products={categoryProducts} />
-                ) : (
-                    <div className="text-center py-20">
-                        <p className="text-gray-500 text-lg">لا توجد منتجات في هذا القسم حالياً.</p>
-                        <Link href="/" className="mt-4 inline-block text-emerald-600 font-bold hover:underline">
-                            العودة للرئيسية
-                        </Link>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+// This route should never be hit directly since the middleware handles locale prefixing.
+// Redirect to the default locale version as a safety net.
+export default async function CollectionRedirect({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    redirect(`/ar/collection/${id}`);
 }

@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useShop, Category } from "@/context/ShopContext";
 import { toast } from "sonner";
 import { Plus, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import imageCompression from 'browser-image-compression';
 import { getProductTitle } from "@/lib/utils";
 import { useTranslations } from 'next-intl';
 import { translateText } from "@/lib/translateText";
+import { uploadImageToStorage } from "@/lib/storage-utils";
 
 export default function AdminCategories() {
     const { categories, addCategory, deleteCategory } = useShop();
@@ -48,32 +48,17 @@ export default function AdminCategories() {
     const handleImageUpload = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
         setLoading(true);
+        const toastId = toast.loading("Uploading image...");
         try {
-            toast.info("Processing Image...");
-            const file = files[0];
-
-            // 1. Compress Image (Client-Side)
-            // Goal: Maintain quality but reduce size significantly (e.g., < 100KB for Firestore)
-            const compressed = await imageCompression(file, {
-                maxSizeMB: 0.1, // Target ~100KB
+            const url = await uploadImageToStorage(files[0], "categories", {
+                maxSizeMB: 0.5,
                 maxWidthOrHeight: 600,
-                useWebWorker: true,
-                initialQuality: 0.7,
-                fileType: "image/webp" // efficient format
             });
-
-            // 2. Convert to Base64 (Data URL)
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result as string;
-                setCatImage(base64String); // Set state directly
-                toast.success("Image Ready (Saved as Text)");
-            };
-            reader.readAsDataURL(compressed);
-
+            setCatImage(url);
+            toast.success("Image Ready", { id: toastId });
         } catch (e: any) {
-            console.error("Image Processing Error:", e);
-            toast.error(`Error processing image: ${e.message || "Unknown error"}`);
+            console.error("Image Upload Error:", e);
+            toast.error(`Error uploading image: ${e.message || "Unknown error"}`, { id: toastId });
         } finally {
             setLoading(false);
         }

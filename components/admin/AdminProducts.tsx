@@ -7,11 +7,11 @@ import { Save, Plus, Trash2, Edit, Image as ImageIcon, Loader2 } from "lucide-re
 import { db, storage } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import imageCompression from 'browser-image-compression';
 import { getProductTitle } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { translateText } from "@/lib/translateText";
 import { Video, ImagePlus, X } from "lucide-react";
+import { uploadImageToStorage } from "@/lib/storage-utils";
 
 export default function AdminProducts() {
     const { products, addProduct, updateProduct, deleteProduct, categories } = useShop();
@@ -26,7 +26,7 @@ export default function AdminProducts() {
         variants: [] as string[],
         highlights: "", howToUse: "", ingredients: "",
         videoUrl: "", richContentImages: [] as string[],
-
+        showInMidPageSlider: false,
 
         metaTitle: "", metaDescription: "",
         bundles: [] as { qty: number; price: number; badgeText?: string }[]
@@ -107,7 +107,8 @@ export default function AdminProducts() {
             metaTitle: p.metaTitle || "",
             metaDescription: p.metaDescription || "",
             bundles: p.bundles || [],
-            shipping_type: p.shipping_type || "standard"
+            shipping_type: p.shipping_type || "standard",
+            showInMidPageSlider: p.showInMidPageSlider || false,
         });
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -132,22 +133,20 @@ export default function AdminProducts() {
     const handleRichImagesUpload = async (files: FileList | null) => {
         if (!files) return;
         setLoading(true);
-        const toastId = toast.loading("Processing rich images...");
+        const toastId = toast.loading(`Uploading ${files.length} image(s) to Storage...`);
         const newImages: string[] = [];
 
         try {
             for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const options = { maxSizeMB: 1, maxWidthOrHeight: 1200, useWebWorker: true };
-                const compressedFile = await imageCompression(file, options);
-
-                const storageRef = ref(storage, `products/rich_${Date.now()}_${file.name}`);
-                await uploadBytes(storageRef, compressedFile);
-                const url = await getDownloadURL(storageRef);
+                const url = await uploadImageToStorage(files[i], "products/rich", {
+                    maxSizeMB: 0.5,
+                    maxWidthOrHeight: 1200,
+                });
                 newImages.push(url);
             }
+
             setFormData(prev => ({ ...prev, richContentImages: [...prev.richContentImages, ...newImages] }));
-            toast.success("Rich content images added!", { id: toastId });
+            toast.success(`${newImages.length} image(s) uploaded!`, { id: toastId });
         } catch (error) {
             console.error(error);
             toast.error("Upload failed", { id: toastId });
@@ -158,33 +157,25 @@ export default function AdminProducts() {
     const handleImageUpload = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
         setLoading(true);
+        const toastId = toast.loading("Uploading images to Storage...");
         try {
-            toast.info("Compressing & Uploading...");
             const filesArray = Array.from(files);
             const newImageUrls: string[] = [];
 
             for (const file of filesArray) {
-                // 1. Compress
-                const compressed = await imageCompression(file, {
-                    maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true, initialQuality: 0.8
+                const url = await uploadImageToStorage(file, "products", {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1200,
                 });
-
-                // 2. Upload to Firebase Storage
-                const filename = `products/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-                const storageRef = ref(storage, filename);
-                const snapshot = await uploadBytes(storageRef, compressed);
-
-                // 3. Get URL
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                newImageUrls.push(downloadURL);
+                newImageUrls.push(url);
             }
 
             const updatedImages = [...formData.images, ...newImageUrls].slice(0, 5);
             setFormData({ ...formData, images: updatedImages, image: updatedImages[0] });
-            toast.success("Images Uploaded Successfully");
+            toast.success("Images Uploaded Successfully", { id: toastId });
         } catch (e) {
             console.error(e);
-            toast.error("Error uploading images");
+            toast.error("Error uploading images", { id: toastId });
         } finally {
             setLoading(false);
         }
@@ -285,14 +276,22 @@ export default function AdminProducts() {
                                 ))}
                             </select>
                         </div>
-                        <div className="col-span-2 flex gap-4">
-                            <label className="flex items-center gap-2 p-3 border rounded-xl bg-gray-50 cursor-pointer hover:bg-gray-100 flex-1">
+                        <div className="col-span-2 flex flex-wrap gap-3">
+                            <label className="flex items-center gap-2 p-3 border rounded-xl bg-gray-50 cursor-pointer hover:bg-gray-100 flex-1 min-w-[150px]">
                                 <input type="checkbox" checked={formData.allowAddToCart} onChange={e => setFormData({ ...formData, allowAddToCart: e.target.checked })} className="w-5 h-5 accent-emerald-600" />
                                 <span className="text-sm font-bold text-gray-700">{t('enable_add_to_cart')}</span>
                             </label>
-                            <label className="flex items-center gap-2 p-3 border rounded-xl bg-yellow-50 border-yellow-200 cursor-pointer hover:bg-yellow-100 flex-1">
+                            <label className="flex items-center gap-2 p-3 border rounded-xl bg-yellow-50 border-yellow-200 cursor-pointer hover:bg-yellow-100 flex-1 min-w-[150px]">
                                 <input type="checkbox" checked={formData.isBestSeller} onChange={e => setFormData({ ...formData, isBestSeller: e.target.checked })} className="w-5 h-5 accent-yellow-600" />
                                 <span className="text-sm font-bold text-yellow-800">{t('best_seller')}</span>
+                            </label>
+                            {/* ── Mid-Page Slider Toggle ── */}
+                            <label className="flex items-center gap-2 p-3 border-2 rounded-xl bg-purple-50 border-purple-200 cursor-pointer hover:bg-purple-100 flex-1 min-w-[150px]">
+                                <input type="checkbox" checked={formData.showInMidPageSlider} onChange={e => setFormData({ ...formData, showInMidPageSlider: e.target.checked })} className="w-5 h-5 accent-purple-600" />
+                                <div>
+                                    <span className="text-sm font-bold text-purple-800 block">🎬 Mid-Page Slider</span>
+                                    <span className="text-[10px] text-purple-500">يظهر في السليدر الأوسط</span>
+                                </div>
                             </label>
                         </div>
 

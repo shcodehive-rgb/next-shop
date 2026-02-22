@@ -5,6 +5,9 @@ import CategoryFilter from "@/components/shop/CategoryFilter"; // Import Filter 
 import { getTranslations } from "next-intl/server";
 import { Package } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface Props {
     params: Promise<{ id: string; locale: string }>;
 }

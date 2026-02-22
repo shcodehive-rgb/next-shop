@@ -59,6 +59,7 @@ export interface Product {
 
     metaTitle?: string;
     metaDescription?: string;
+    showInMidPageSlider?: boolean; // ── Slider: shows in mid-page Netflix slider ──
 }
 
 export interface Customer {
@@ -400,7 +401,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // تحديث الإعدادات
     const updateSettings = async (s: Partial<SiteSettings>) => {
         try {
-            await setDoc(doc(db, "settings", "general"), { ...settings, ...s }, { merge: true });
+            await setDoc(doc(db, "settings", "general"), s, { merge: true });
         } catch (e) {
             console.error("Error saving settings", e);
         }

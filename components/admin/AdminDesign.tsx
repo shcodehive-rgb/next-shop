@@ -2,9 +2,8 @@
 
 import { useShop } from "@/context/ShopContext";
 import { toast } from "sonner";
-import imageCompression from 'browser-image-compression';
-import { fileToBase64 } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import { convertImageToBase64, validateBase64Size } from "@/lib/base64-utils";
 
 export default function AdminDesign() {
     const { settings, updateSettings } = useShop();
@@ -28,12 +27,22 @@ export default function AdminDesign() {
                             type="file" accept="image/*"
                             onChange={async (e) => {
                                 if (e.target.files?.[0]) {
-                                    toast.info(t('processing'));
-                                    const file = e.target.files[0];
-                                    const compressed = await imageCompression(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true, initialQuality: 0.8 });
-                                    const base64 = await fileToBase64(compressed);
-                                    updateSettings({ heroImage: base64 });
-                                    toast.success(t('banner_updated'));
+                                    const toastId = toast.loading(t('processing'));
+                                    try {
+                                        const file = e.target.files[0];
+                                        const base64 = await convertImageToBase64(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
+                                        
+                                        // Validate size before saving
+                                        if (!validateBase64Size(base64)) {
+                                            throw new Error('Image is too large even after compression');
+                                        }
+                                        
+                                        await updateSettings({ heroImage: base64 });
+                                        toast.success(t('banner_updated'), { id: toastId });
+                                    } catch (err) {
+                                        console.error(err);
+                                        toast.error(t('error_generic'), { id: toastId });
+                                    }
                                 }
                             }}
                             className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
@@ -58,12 +67,22 @@ export default function AdminDesign() {
                             type="file" accept="image/*"
                             onChange={async (e) => {
                                 if (e.target.files?.[0]) {
-                                    toast.info(t('processing'));
-                                    const file = e.target.files[0];
-                                    const compressed = await imageCompression(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true, initialQuality: 0.8 });
-                                    const base64 = await fileToBase64(compressed);
-                                    updateSettings({ middleBanner: base64 });
-                                    toast.success(t('banner_updated'));
+                                    const toastId = toast.loading(t('processing'));
+                                    try {
+                                        const file = e.target.files[0];
+                                        const base64 = await convertImageToBase64(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
+                                        
+                                        // Validate size before saving
+                                        if (!validateBase64Size(base64)) {
+                                            throw new Error('Image is too large even after compression');
+                                        }
+                                        
+                                        await updateSettings({ middleBanner: base64 });
+                                        toast.success(t('banner_updated'), { id: toastId });
+                                    } catch (err) {
+                                        console.error(err);
+                                        toast.error(t('error_generic'), { id: toastId });
+                                    }
                                 }
                             }}
                             className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
