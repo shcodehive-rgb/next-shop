@@ -2,6 +2,7 @@ import { useShop } from "@/context/ShopContext";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Calendar, User, Clock, ArrowLeft, Share2 } from "lucide-react";
+import type { Metadata } from "next";
 
 // Sample blog posts data - in a real app, this would come from a CMS or database
 const sampleBlogPosts = [
