@@ -203,24 +203,28 @@ export default function CartDrawer() {
 
                         {/* ── Rule 2: MOV warning bar ──────────────────────────────────────────── */}
                         {!meetsMinOrder && (
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
-                                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                                 <div className="text-right flex-1">
-                                    <p className="text-amber-800 font-bold text-xs leading-relaxed">
-                                        عذراً، الحد الأدنى للطلب هو 149 درهم
+                                    <p className="text-red-800 font-bold text-sm leading-relaxed">
+                                        {locale === 'ar' 
+                                            ? `عذراً، يجب أن يصل مجموع طلبك إلى 149 درهم لتأكيده. متبقي لك فقط ${remaining.toFixed(0)} درهم`
+                                            : `Sorry, your order must reach 149 DH to confirm. Only ${remaining.toFixed(0)} DH remaining`
+                                        }
                                     </p>
                                     <div className="mt-2">
                                         {/* Progress bar */}
-                                        <div className="w-full bg-amber-100 rounded-full h-1.5">
+                                        <div className="w-full bg-red-100 rounded-full h-2">
                                             <div
-                                                className="bg-amber-500 h-1.5 rounded-full transition-all duration-500"
+                                                className="bg-red-500 h-2 rounded-full transition-all duration-500"
                                                 style={{ width: `${Math.min((subtotal / MIN_ORDER_VALUE) * 100, 100)}%` }}
                                             />
                                         </div>
-                                        <p className="text-amber-600 text-[11px] mt-1">
+                                        <p className="text-red-600 text-xs mt-1 font-bold">
                                             {locale === 'ar'
-                                                ? `أضف ${remaining.toFixed(0)} درهم للمتابعة`
-                                                : `Add ${remaining.toFixed(0)} DH to continue`}
+                                                ? `المجموع الحالي: ${subtotal.toFixed(0)} درهم من ${MIN_ORDER_VALUE} درهم`
+                                                : `Current: ${subtotal.toFixed(0)} DH of ${MIN_ORDER_VALUE} DH minimum`
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -240,17 +244,31 @@ export default function CartDrawer() {
                             className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2
                                 ${meetsMinOrder
                                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 cursor-pointer'
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'}`}
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'}`}
                         >
                             {meetsMinOrder
-                                ? (locale === 'ar' ? 'إتمام الطلب ←' : 'Proceed to Checkout →')
-                                : `${locale === 'ar' ? 'الحد الأدنى' : 'Min order'}: ${MIN_ORDER_VALUE} DH`}
+                                ? (locale === 'ar' ? 'أكد الطلب ←' : 'Confirm Order ←')
+                                : (locale === 'ar' ? `الحد الأدنى: ${MIN_ORDER_VALUE} DH` : `Min Order: ${MIN_ORDER_VALUE} DH`)
+                            }
                         </button>
 
                         <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-2">
                             <span className="block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                             {locale === 'ar' ? 'توصيل مجاني • الدفع عند الاستلام' : 'Free Delivery • Cash on Delivery'}
                         </p>
+
+                        {/* Continue Shopping Button */}
+                        <button
+                            onClick={() => {
+                                closeCart();
+                                // Navigate to main shop
+                                window.location.href = `/${locale}`;
+                            }}
+                            className="w-full mt-2 py-3 border border-emerald-600 text-emerald-600 rounded-xl font-bold hover:bg-emerald-50 transition flex items-center justify-center gap-2"
+                        >
+                            <ShoppingBag className="w-4 h-4" />
+                            {locale === 'ar' ? 'متابعة التسوق' : 'Continue Shopping'}
+                        </button>
                     </div>
                 )}
             </div>

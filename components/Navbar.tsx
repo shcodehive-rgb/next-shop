@@ -113,7 +113,7 @@ export default function Navbar() {
                                             href={`/${locale}/collection/${category.id}`}
                                             className="block px-4 py-2 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                                         >
-                                            {getCategoryTitle(category.name)}
+                                            {getCategoryTitle(category.name, locale)}
                                         </Link>
                                     ))
                                 ) : (
@@ -195,7 +195,7 @@ export default function Navbar() {
                                                 href={`/${locale}/collection/${category.id}`}
                                                 className="block py-2 text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors rounded"
                                             >
-                                                {getCategoryTitle(category.name)}
+                                                {getCategoryTitle(category.name, locale)}
                                             </Link>
                                         ))
                                     ) : (

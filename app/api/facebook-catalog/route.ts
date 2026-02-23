@@ -54,11 +54,22 @@ function formatPrice(price: string): string {
 // Fetch active products from Firestore
 async function fetchActiveProducts(): Promise<Product[]> {
     try {
-        const productsQuery = query(
-            collection(db, "products"),
-            where("visible", "in", [true, undefined]), // Include products where visible is true or undefined
-            limit(1000) // Limit to 1000 products for performance
-        );
+        // First try to query only visible products
+        let productsQuery;
+        try {
+            productsQuery = query(
+                collection(db, "products"),
+                where("visible", "==", true),
+                limit(1000)
+            );
+        } catch (error) {
+            // If visible field doesn't exist or has mixed types, fetch all products
+            console.warn("⚠️ Could not filter by visible field, fetching all products");
+            productsQuery = query(
+                collection(db, "products"),
+                limit(1000)
+            );
+        }
 
         const querySnapshot = await getDocs(productsQuery);
         const products: Product[] = [];
@@ -66,8 +77,9 @@ async function fetchActiveProducts(): Promise<Product[]> {
         querySnapshot.forEach((doc) => {
             const data = doc.data();
             
-            // Only include products that have basic required fields
-            if (data.title && data.price && (data.image || data.images)) {
+            // Only include products that have basic required fields and are visible (or visible is undefined)
+            const isVisible = data.visible === true || data.visible === undefined;
+            if (isVisible && data.title && data.price && (data.image || data.images)) {
                 products.push({
                     id: doc.id,
                     title: data.title,

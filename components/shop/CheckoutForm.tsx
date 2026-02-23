@@ -11,6 +11,9 @@ import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import Swal from "sweetalert2";
 
+// ── Business Rules ────────────────────────────────────────────────────────────
+const MIN_ORDER_VALUE = 149;  // DH — block checkout below this
+
 export interface CheckoutFormProps {
     product?: Product; // Kept for backward compat if needed, but directItem is better
     className?: string;
@@ -66,6 +69,30 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name || !formData.phone || !formData.city) return;
+
+        // Check Minimum Order Value
+        if (itemsTotal < MIN_ORDER_VALUE) {
+            const remaining = MIN_ORDER_VALUE - itemsTotal;
+            Swal.fire({
+                icon: 'warning',
+                title: locale === 'ar' ? 'الحد الأدنى للطلب' : 'Minimum Order Value',
+                text: locale === 'ar' 
+                    ? `الحد الأدنى للطلب هو ${MIN_ORDER_VALUE} درهم. بقي لك ${remaining.toFixed(0)} درهم لإتمام الطلب.`
+                    : `Minimum order is ${MIN_ORDER_VALUE} DH. You need ${remaining.toFixed(0)} DH more to complete your order.`,
+                confirmButtonText: locale === 'ar' ? 'أضف منتجات أخرى' : 'Add More Products',
+                confirmButtonColor: '#ef4444',
+                showCancelButton: true,
+                cancelButtonText: locale === 'ar' ? 'العودة للسلة' : 'Go to Cart',
+                cancelButtonColor: '#10b981'
+            }).then((result) => {
+                if (result.isDismissed) {
+                    // Go to cart
+                    router.push(`/${locale}/products`);
+                }
+            });
+            setLoading(false);
+            return;
+        }
 
         setLoading(true);
         const safeStoreName = (settings.storeName || "Store").replace(/[.#$/\[\]]/g, "_");

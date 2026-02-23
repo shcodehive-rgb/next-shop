@@ -11,6 +11,10 @@ import Link from "next/link";
 import Image from "next/image";
 import CheckoutForm from "@/components/shop/CheckoutForm";
 import ProductFOMO from "@/components/shop/ProductFOMO";
+import RecentlyViewed from "@/components/shop/RecentlyViewed";
+import { addToRecentlyViewed } from "@/lib/recentlyViewed";
+import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
 
 interface ProductClientProps {
     initialProduct: any;
@@ -76,16 +80,17 @@ function RelatedCard({ product, locale }: { product: any; locale: string }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ProductClient({ initialProduct }: ProductClientProps) {
-    const { addToCart, settings, openCart, products: allProducts } = useShop();
-    const locale = useLocale();
+    const { products, addToCart, openCart } = useShop();
     const t = useTranslations('Product');
     const tCommon = useTranslations('Common');
+    const locale = useLocale();
+    const router = useRouter();
 
     const product = initialProduct;
 
     const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
-    const [quantity, setQuantity] = useState(1);
-    const [selectedImage, setSelectedImage] = useState(0);
+    const [quantity, setQuantity] = useState<number>(1);
+    const [selectedImage, setSelectedImage] = useState<number>(0);
     const [selectedBundleIndex, setSelectedBundleIndex] = useState<number | null>(null);
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxImage, setLightboxImage] = useState<string>("");
@@ -95,6 +100,18 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
             setQuantity(product.bundles[selectedBundleIndex].qty);
         }
     }, [selectedBundleIndex, product]);
+
+    // Track product view
+    useEffect(() => {
+        if (product?.id) {
+            addToRecentlyViewed({
+                id: product.id,
+                title: product.title,
+                price: product.price,
+                image: product.images?.[0] || product.image
+            });
+        }
+    }, [product]);
 
     useEffect(() => {
         if (selectedBundleIndex !== null && product?.bundles?.[selectedBundleIndex]) {
@@ -158,7 +175,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
     const isCurrentCheap = Number(product.price) < CHEAP_THRESHOLD;
 
     const relatedProducts = isCurrentCheap
-        ? allProducts
+        ? products
             .filter(p =>
                 p.category === product.category &&
                 p.id !== product.id &&
@@ -166,7 +183,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                 Number(p.price) < CHEAP_THRESHOLD
             )
             .slice(0, 4)
-        : allProducts
+        : products
             .filter(p => p.category === product.category && p.id !== product.id && p.visible !== false)
             .slice(0, 4);
 
@@ -492,6 +509,9 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                         </div>
                     </section>
                 )}
+
+                {/* Recently Viewed Products */}
+                <RecentlyViewed currentProductId={product.id} />
             </div>
 
             {/* Sticky Mobile CTA */}
@@ -502,12 +522,12 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                 </div>
                 <button
                     onClick={() => {
-                        const el = document.getElementById('checkout-form-section');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        // Always redirect to cart for MOV enforcement
+                        router.push(`/${locale}/products`);
                     }}
                     className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition"
                 >
-                    {locale === 'ar' ? 'اطلب الان' : 'Order Now'}
+                    {locale === 'ar' ? 'أكد الطلب' : 'Confirm Order'}
                 </button>
             </div>
 
