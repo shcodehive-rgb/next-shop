@@ -61,21 +61,6 @@ export default function AdminSettings() {
                         </div>
                     </div>
 
-                    {/* Default Language */}
-                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                        <label className="block text-sm font-bold text-emerald-800 mb-1">{t('defaultLang')}</label>
-                        <select
-                            value={localSettings.default_locale || "ar"}
-                            onChange={(e) => handleChange("default_locale", e.target.value)}
-                            className="w-full p-3 bg-white border border-emerald-200 rounded-xl font-bold text-emerald-900"
-                        >
-                            <option value="ar">العربية (Arabic)</option>
-                            <option value="en">English (الإنجليزية)</option>
-                            <option value="fr">Français (الفرنسية)</option>
-                        </select>
-                        <p className="text-xs text-emerald-600 mt-1">{t('defaultLangDesc')}</p>
-                    </div>
-
                     {/* Announcements */}
                     <div>
                         <label className="block text-sm font-bold text-gray-500 mb-1">{t('announcements')}</label>

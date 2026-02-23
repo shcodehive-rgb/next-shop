@@ -55,17 +55,24 @@ export default function ProductCard({ product, onClick, priority = false, forceS
       className="group block relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 w-full overflow-hidden"
     >
       {/* IMAGE */}
-      <div className="relative aspect-square w-full bg-white overflow-hidden rounded-t-xl border-b border-gray-50">
+      <div className="relative aspect-square w-full bg-white overflow-hidden rounded-t-xl border-b border-gray-50 select-none">
         <Image
           src={imageSrc || '/placeholder.svg'}
           alt={displayTitle}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          className="object-contain transition-transform duration-500 group-hover:scale-110 select-none"
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
           priority={priority}
           loading={priority ? "eager" : "lazy"}
           unoptimized={!isRemote}
+          onContextMenu={(e) => e.preventDefault()}
+          draggable={false}
         />
+
+        {/* Subtle Watermark */}
+        <div className="absolute bottom-2 right-2 text-white opacity-30 pointer-events-none select-none font-bold text-[10px]">
+          Luxe Store
+        </div>
 
         {/* Discount Badge (manual label) */}
         {showDiscountBadge && (

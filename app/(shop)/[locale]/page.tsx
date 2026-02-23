@@ -3,6 +3,7 @@ import { getStoreData } from "@/lib/server/getStoreData";
 
 // Force Dynamic Rendering for Real-time Data on Refresh
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Disable caching for immediate updates
 
 export default async function Home() {
     const { products, categories, settings } = await getStoreData();

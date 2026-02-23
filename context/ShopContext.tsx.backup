@@ -10,7 +10,7 @@ import {
     deleteDoc,
     updateDoc
 } from "firebase/firestore";
-import { db, rtdb } from "@/lib/firebase";
+import { db, rtdb } from "@/lib/firebase"; // تأكدي أن هذا المسار صحيح
 import { ref, onValue } from "firebase/database";
 
 // --- TYPES ---
@@ -233,6 +233,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const openCheckout = () => setIsCheckoutOpen(true);
     const closeCheckout = () => setIsCheckoutOpen(false);
 
+
     // 🔥 1. REAL-TIME DATA SYNC
     useEffect(() => {
         // A. Listen to Products
@@ -305,16 +306,30 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             console.error("Error fetching blogs:", error);
         });
 
-        // G. Load Cart from LocalStorage & Hydrate with Real-time Data
+        // F. Load Cart from LocalStorage & Hydrate with Real-time Data
         const localCart = localStorage.getItem("cart");
         if (localCart) {
             try {
                 let parsedCart: CartItem[] = JSON.parse(localCart);
+
+                // Hydrate: Fill in missing images/details from the live 'products' list (if available yet)
+                // Note: 'products' in this scope might be empty initially. 
+                // So we should also trigger hydration when 'products' updates.
+
+                // For now, just set what we have. A separate effect can listen to [products] and update cart details if needed.
+                // Or better: We rely on the fact that we rendered with what we had. 
+
                 setCart(parsedCart);
             } catch (e) {
                 console.error("Error parsing cart", e);
             }
         }
+
+        // G. Listen to Orders (RTDB)
+        // Store Name for path: settings.storeName might not be loaded yet, but we can try observing it.
+        // Actually, better to listen inside a separate useEffect that depends on [settings.storeName]
+        // BUT, settings are loaded in step E. Let's do it here if we can, or separate.
+        // Since we want ALL orders for this store, we need the sanitized store name.
 
         return () => {
             unsubProducts();
@@ -322,7 +337,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             unsubCustomers();
             unsubShipping();
             unsubSettings();
-            unsubBlogs();
         };
     }, []);
 
@@ -349,12 +363,31 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         return () => unsubOrders();
     }, [settings.storeName]);
 
+    // Effect to Hydrate Cart Images when Products Load
+    useEffect(() => {
+        if (products.length > 0 && cart.length > 0) {
+            // Check if any cart item is missing its image (because we stripped it)
+            const needsHydration = cart.some(item => !item.image || item.image === "");
+
+            if (needsHydration) {
+                setCart(prevCart => prevCart.map(item => {
+                    const product = products.find(p => p.id === item.id);
+                    if (product) {
+                        return { ...item, image: product.image, images: product.images };
+                    }
+                    return item;
+                }));
+            }
+        }
+    }, [products]); // Run when products are fetched
+
     // --- ACTIONS WITH FIREBASE SYNC ---
 
     // إضافة منتج (يكتب في Firebase مباشرة)
     const addProduct = async (p: Product) => {
         try {
             await setDoc(doc(db, "products", p.id), p);
+            // No need to setProducts manually, onSnapshot will do it
         } catch (e) {
             console.error("Error adding product", e);
         }
@@ -405,31 +438,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Blog Management Functions
-    const addBlog = async (b: Blog) => {
-        try {
-            await setDoc(doc(db, "blogs", b.id), b);
-        } catch (e) {
-            console.error("Error adding blog", e);
-        }
-    };
-
-    const updateBlog = async (id: string, b: Partial<Blog>) => {
-        try {
-            await updateDoc(doc(db, "blogs", id), b);
-        } catch (e) {
-            console.error("Error updating blog", e);
-        }
-    };
-
-    const deleteBlog = async (id: string) => {
-        try {
-            await deleteDoc(doc(db, "blogs", id));
-        } catch (e) {
-            console.error("Error deleting blog", e);
-        }
-    };
-
     // Helper to save cart to local storage (stripping large data)
     const saveCartToLocal = (cartItems: CartItem[]) => {
         try {
@@ -438,7 +446,13 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 qty: item.qty,
                 title: item.title,
                 price: item.price,
+                // Keep only essential fields. Remove images.
+                // If we need images in cart, we should rely on the main products list to hydrate them 
+                // or keep only a small thumbnail if it's a URL (not base64).
+                // For now, let's keep the main image if it's short, otherwise drop it.
                 image: item.image?.length > 1000 ? "" : item.image,
+                // We definitely don't want the full images array if they are base64
+                // options: item.options // if we had options
             }));
             localStorage.setItem("cart", JSON.stringify(minimizedCart));
         } catch (e) {
@@ -448,6 +462,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
     const addToCart = (p: Product, variant?: string, qty = 1) => {
         setCart((prev) => {
+            // Check if item with same ID AND same variant exists
             const existing = prev.find((i) => i.id === p.id && i.selectedVariant === variant);
             let newCart;
             if (existing) {
@@ -459,6 +474,33 @@ export function ShopProvider({ children }: { children: ReactNode }) {
             return newCart;
         });
         setIsCartOpen(true);
+
+        // 📊 PIXEL TRACKING: AddToCart
+        // @ts-ignore
+        if (typeof window !== 'undefined' && window.fbq) {
+            // @ts-ignore
+            window.fbq('track', 'AddToCart', {
+                content_name: p.title,
+                content_ids: [p.id],
+                content_type: 'product',
+                value: Number(p.price) * qty,
+                currency: 'MAD',
+                variant: variant
+            });
+        }
+        // @ts-ignore
+        if (typeof window !== 'undefined' && window.ttq) {
+            // @ts-ignore
+            window.ttq.track('AddToCart', {
+                content_id: p.id,
+                content_type: 'product',
+                content_name: p.title,
+                quantity: qty,
+                price: Number(p.price),
+                value: Number(p.price) * qty,
+                currency: 'MAD'
+            });
+        }
     };
 
     const removeFromCart = (id: string, variant?: string) => {
@@ -495,36 +537,144 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const updateShippingRate = async (id: string, rate: Partial<ShippingRate>) => {
         try {
             await updateDoc(doc(db, "shipping_rates", id), rate);
-        } catch (e) {
-            console.error("Error updating shipping rate", e);
+
+// Helper to save cart to local storage (stripping large data)
+const saveCartToLocal = (cartItems: CartItem[]) => {
+    try {
+        const minimizedCart = cartItems.map(item => ({
+            id: item.id,
+            qty: item.qty,
+            title: item.title,
+            price: item.price,
+            // Keep only essential fields. Remove images.
+            // If we need images in cart, we should rely on the main products list to hydrate them 
+            // or keep only a small thumbnail if it's a URL (not base64).
+            // For now, let's keep the main image if it's short, otherwise drop it.
+            image: item.image?.length > 1000 ? "" : item.image,
+            // We definitely don't want the full images array if they are base64
+            // options: item.options // if we had options
+        }));
+        localStorage.setItem("cart", JSON.stringify(minimizedCart));
+    } catch (e) {
+        console.error("Local Storage Quota Exceeded", e);
+    }
+};
+
+const addToCart = (p: Product, variant?: string, qty = 1) => {
+    setCart((prev) => {
+        // Check if item with same ID AND same variant exists
+        const existing = prev.find((i) => i.id === p.id && i.selectedVariant === variant);
+        let newCart;
+        if (existing) {
+            newCart = prev.map((i) => (i.id === p.id && i.selectedVariant === variant ? { ...i, qty: i.qty + qty, price: p.price } : i));
+        } else {
+            newCart = [...prev, { ...p, qty, selectedVariant: variant }];
         }
-    };
+        saveCartToLocal(newCart);
+        return newCart;
+    });
+    setIsCartOpen(true);
 
-    const deleteShippingRate = async (id: string) => {
-        try {
-            await deleteDoc(doc(db, "shipping_rates", id));
-        } catch (e) {
-            console.error("Error deleting shipping rate", e);
-        }
-    };
+    // PIXEL TRACKING: AddToCart
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window.fbq) {
+        // @ts-ignore
+        window.fbq('track', 'AddToCart', {
+            content_name: p.title,
+            content_ids: [p.id],
+            content_type: 'product',
+            value: Number(p.price) * qty,
+            currency: 'MAD',
+            variant: variant
+        });
+    }
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window.ttq) {
+        // @ts-ignore
+        window.ttq.track('AddToCart', {
+            content_id: p.id,
+            content_type: 'product',
+            content_name: p.title,
+            quantity: qty,
+            price: Number(p.price),
+            value: Number(p.price) * qty,
+            currency: 'MAD'
+        });
+    }
+};
 
-    const getShippingCost = (city: string): number => {
-        if (!city) return 0;
-        const rate = shippingRates.find(r => r.city.toLowerCase() === city.toLowerCase());
-        if (rate) return rate.price;
-        const defaultRate = shippingRates.find(r => r.isDefault);
-        return defaultRate ? defaultRate.price : 0;
-    };
+const removeFromCart = (id: string, variant?: string) => {
+    setCart((prev) => {
+        const newCart = prev.filter((i) => !(i.id === id && i.selectedVariant === variant));
+        saveCartToLocal(newCart);
+        return newCart;
+    });
+};
 
-    // --- SEARCH ---
-    const filteredProducts = products.filter(p => {
-        const query = searchQuery.toLowerCase();
+const updateCartQty = (id: string, qty: number, variant?: string) => {
+    if (qty < 1) return removeFromCart(id, variant);
+    setCart((prev) => {
+        const newCart = prev.map((i) => (i.id === id && i.selectedVariant === variant ? { ...i, qty } : i));
+        saveCartToLocal(newCart);
+        return newCart;
+    });
+};
 
-        // Handle title - could be string or object {ar, en, fr}
-        let titleMatch = false;
-        if (typeof p.title === 'string') {
-            titleMatch = p.title.toLowerCase().includes(query);
-        } else if (typeof p.title === 'object' && p.title !== null) {
+const clearCart = () => {
+    setCart([]);
+    localStorage.removeItem("cart");
+};
+
+// --- SHIPPING RATES ---
+const addShippingRate = async (rate: ShippingRate) => {
+    try {
+        await setDoc(doc(db, "shipping_rates", rate.id), rate);
+    } catch (e) {
+        console.error("Error adding shipping rate", e);
+    }
+};
+
+const updateShippingRate = async (id: string, rate: Partial<ShippingRate>) => {
+    try {
+        await updateDoc(doc(db, "shipping_rates", id), rate);
+    } catch (e) {
+        console.error("Error updating shipping rate", e);
+    }
+};
+
+const deleteShippingRate = async (id: string) => {
+    try {
+        await deleteDoc(doc(db, "shipping_rates", id));
+    } catch (e) {
+        console.error("Error deleting shipping rate", e);
+    }
+};
+
+const getShippingCost = (city: string): number => {
+    if (!city) return 0;
+    const rate = shippingRates.find(r => r.city.toLowerCase() === city.toLowerCase());
+    if (rate) return rate.price;
+    // Return default rate if city not found
+    const defaultRate = shippingRates.find(r => r.isDefault);
+    return defaultRate ? defaultRate.price : 0;
+};
+
+// Blog Management Functions
+const addBlog = async (b: Blog) => {
+    try {
+        await setDoc(doc(db, "blogs", b.id), b);
+    } catch (e) {
+        console.error("Error adding blog", e);
+    }
+};
+
+const updateBlog = async (id: string, b: Partial<Blog>) => {
+    try {
+        await updateDoc(doc(db, "blogs", id), b);
+    } catch (e) {
+        console.error("Error updating blog", e);
+    }
+};
             const titleObj = p.title as any;
             titleMatch = Object.values(titleObj).some(val =>
                 typeof val === 'string' && val.toLowerCase().includes(query)
@@ -547,21 +697,18 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 customers,
                 orders,
                 cart,
-                settings,
-                shippingRates,
-                blogs,
+                shippingRates: [], // TODO: Implement shipping rates state if needed or fetch from DB
                 addToCart,
-                updateCartQty,
-                removeFromCart,
-                clearCart,
+                settings,
                 addProduct,
                 updateProduct,
                 deleteProduct,
                 addCategory,
                 deleteCategory,
-                addBlog,
-                updateBlog,
-                deleteBlog,
+
+                removeFromCart,
+                updateCartQty,
+                clearCart,
                 updateSettings,
                 addShippingRate,
                 updateShippingRate,
@@ -571,6 +718,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 setSearchQuery,
                 filteredProducts,
                 isStoreActive,
+
+                // UI
                 isCartOpen,
                 openCart,
                 closeCart,

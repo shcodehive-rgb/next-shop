@@ -1,14 +1,12 @@
 import imageCompression from "browser-image-compression";
-import { storage } from "@/lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 /**
- * Compresses an image and uploads it to Firebase Storage.
- * Returns the public download URL — NOT a Base64 string.
+ * Compresses an image and converts it to Base64 string.
+ * Returns Base64 Data URL for direct storage in Firestore.
  *
  * @param file   - The raw File object from an <input type="file">.
- * @param folder - The Storage folder to place the file in (e.g. "banners", "products").
- * @returns      - The HTTPS download URL of the uploaded file.
+ * @param folder - The folder name for reference (used only for logging).
+ * @returns      - The Base64 Data URL of the compressed image.
  */
 export async function uploadImageToStorage(
     file: File,
@@ -19,24 +17,66 @@ export async function uploadImageToStorage(
         initialQuality?: number;
     }
 ): Promise<string> {
-    // 1. Compress the image client-side
-    const compressedFile = await imageCompression(file, {
-        maxSizeMB: options?.maxSizeMB ?? 1,
-        maxWidthOrHeight: options?.maxWidthOrHeight ?? 1920,
-        useWebWorker: true,
-        initialQuality: options?.initialQuality ?? 0.8,
-        fileType: "image/webp",
-    });
+    try {
+        // 1. Compress image client-side
+        const compressedFile = await imageCompression(file, {
+            maxSizeMB: options?.maxSizeMB ?? 1,
+            maxWidthOrHeight: options?.maxWidthOrHeight ?? 1920,
+            useWebWorker: true,
+            initialQuality: options?.initialQuality ?? 0.8,
+            fileType: "image/webp",
+        });
 
-    // 2. Build a unique path in Storage
-    const timestamp = Date.now();
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const storageRef = ref(storage, `${folder}/${timestamp}_${safeName}`);
+        // 2. Convert to Base64 Data URL
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64String = event.target?.result as string;
+                if (base64String) {
+                    console.log(`✅ Image compressed and converted to Base64 for ${folder}`);
+                    resolve(base64String);
+                } else {
+                    reject(new Error("Failed to convert image to Base64"));
+                }
+            };
+            reader.onerror = () => reject(new Error("Failed to read image file"));
+            reader.readAsDataURL(compressedFile);
+        });
+    } catch (error) {
+        console.error(`❌ Error processing image for ${folder}:`, error);
+        throw new Error("Failed to process image");
+    }
+}
 
-    // 3. Upload the compressed file
-    await uploadBytes(storageRef, compressedFile);
-
-    // 4. Get and return the download URL
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+/**
+ * Converts video file to Base64 string (no compression for videos).
+ * Returns Base64 Data URL for direct storage in Firestore.
+ *
+ * @param file   - The raw File object from an <input type="file">.
+ * @param folder - The folder name for reference (used only for logging).
+ * @returns      - The Base64 Data URL of the video.
+ */
+export async function uploadVideoToStorage(
+    file: File,
+    folder: string
+): Promise<string> {
+    try {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64String = event.target?.result as string;
+                if (base64String) {
+                    console.log(`✅ Video converted to Base64 for ${folder}`);
+                    resolve(base64String);
+                } else {
+                    reject(new Error("Failed to convert video to Base64"));
+                }
+            };
+            reader.onerror = () => reject(new Error("Failed to read video file"));
+            reader.readAsDataURL(file);
+        });
+    } catch (error) {
+        console.error(`❌ Error processing video for ${folder}:`, error);
+        throw new Error("Failed to process video");
+    }
 }

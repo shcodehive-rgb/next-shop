@@ -4,7 +4,7 @@ import { useShop } from "@/context/ShopContext";
 import { useTranslations, useLocale } from "next-intl";
 import {
     ArrowLeft, Star, Truck, ShieldCheck, FileText, Package,
-    ChevronDown
+    ChevronDown, X
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -87,6 +87,8 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
     const [quantity, setQuantity] = useState(1);
     const [selectedImage, setSelectedImage] = useState(0);
     const [selectedBundleIndex, setSelectedBundleIndex] = useState<number | null>(null);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxImage, setLightboxImage] = useState<string>("");
 
     useEffect(() => {
         if (selectedBundleIndex !== null && product?.bundles?.[selectedBundleIndex]) {
@@ -184,19 +186,31 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                 {/* ── MAIN GRID ── */}
                 <div className="grid md:grid-cols-2 gap-8 md:gap-12 bg-white rounded-3xl p-0 md:p-8 shadow-none md:shadow-sm">
 
-                    {/* LEFT COL: Images + Description (desktop only) */}
+                    {/* LEFT COL: Images ONLY (cleaned for main content) */}
                     <div className="space-y-4">
                         {/* Main image */}
-                        <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm">
+                        <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm select-none">
                             <Image
                                 src={images[selectedImage] || "/placeholder.svg"}
                                 alt={displayTitle}
                                 fill
-                                className="object-cover"
+                                className="object-contain cursor-pointer select-none"
                                 sizes="(max-width: 768px) 100vw, 50vw"
                                 priority
                                 unoptimized={!isRemote(images[selectedImage])}
+                                onContextMenu={(e) => e.preventDefault()}
+                                draggable={false}
+                                onClick={() => {
+                                    setLightboxImage(images[selectedImage]);
+                                    setLightboxOpen(true);
+                                }}
                             />
+                            
+                            {/* Watermark Overlay */}
+                            <div className="absolute bottom-4 right-4 text-white opacity-40 pointer-events-none select-none font-bold text-sm">
+                                Luxe Store
+                            </div>
+                            
                             {showDiscount && (
                                 <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold z-10 shadow-md">
                                     {product.discountLabel}
@@ -209,67 +223,42 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                             <div className="flex gap-2 overflow-x-auto pb-2">
                                 {images.map((img: string, idx: number) => (
                                     <button key={idx} onClick={() => setSelectedImage(idx)}
-                                        className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition ${selectedImage === idx ? 'border-emerald-600' : 'border-gray-200'}`}>
-                                        <Image src={img} alt="" fill className="object-cover" unoptimized={!isRemote(img)} />
+                                        className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition select-none ${selectedImage === idx ? 'border-emerald-600' : 'border-gray-200'}`}>
+                                        <Image 
+                                            src={img} 
+                                            alt="" 
+                                            fill 
+                                            className="object-cover select-none" 
+                                            unoptimized={!isRemote(img)}
+                                            onContextMenu={(e) => e.preventDefault()}
+                                            draggable={false}
+                                        />
                                     </button>
                                 ))}
                             </div>
                         )}
 
-                        {/* ── DESCRIPTION UNDER IMAGES (Desktop only) ── */}
-                        {hasRichContent && (
-                            <div className="hidden md:block space-y-4 mt-2">
-
-                                {/* Rich images / video */}
-                                {(product.richContentImages?.length > 0 || product.videoUrl) && (
-                                    <div className="space-y-4">
-                                        {product.richContentImages?.map((img: string, idx: number) => (
-                                            <div key={idx} className="w-full relative shadow-sm rounded-2xl overflow-hidden">
-                                                <Image src={img} alt={`Detail ${idx + 1}`} width={1200} height={1600}
-                                                    className="w-full h-auto object-cover" unoptimized />
-                                            </div>
-                                        ))}
-                                        {product.videoUrl && (
-                                            <div className="w-full relative rounded-2xl overflow-hidden shadow-lg border-4 border-emerald-50">
-                                                <video src={product.videoUrl} controls playsInline preload="metadata" className="w-full h-auto bg-black" />
-                                            </div>
-                                        )}
+                        {/* ── RICH MEDIA ONLY (Images & Video) ── */}
+                        {(product.richContentImages?.length > 0 || product.videoUrl) && (
+                            <div className="space-y-4 mt-2">
+                                {product.richContentImages?.map((img: string, idx: number) => (
+                                    <div key={idx} className="w-full relative shadow-sm rounded-2xl overflow-hidden select-none">
+                                        <Image 
+                                            src={img} 
+                                            alt={`Detail ${idx + 1}`} 
+                                            width={1200} 
+                                            height={1600}
+                                            className="w-full h-auto object-cover select-none" 
+                                            unoptimized 
+                                            onContextMenu={(e) => e.preventDefault()}
+                                            draggable={false}
+                                        />
                                     </div>
-                                )}
-
-                                {/* Description */}
-                                {displayDescription && (
-                                    <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100 font-tajawal">
-                                        <h3 className="text-base font-black text-gray-900 mb-3 flex items-center gap-2">
-                                            <FileText className="w-4 h-4 text-emerald-600" />
-                                            {locale === 'ar' ? "تفاصيل المنتج" : "Product Details"}
-                                        </h3>
-                                        <div className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">
-                                            {displayDescription}
-                                        </div>
-                                    </section>
-                                )}
-
-                                {/* How to Use */}
-                                {product.howToUse && (
-                                    <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100 font-tajawal">
-                                        <h3 className="text-base font-black text-gray-900 mb-3 flex items-center gap-2">
-                                            <Package className="w-4 h-4 text-blue-600" />
-                                            {locale === 'ar' ? "طريقة الاستخدام" : "How to Use"}
-                                        </h3>
-                                        <div className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">{product.howToUse}</div>
-                                    </section>
-                                )}
-
-                                {/* Ingredients */}
-                                {product.ingredients && (
-                                    <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100 font-tajawal">
-                                        <h3 className="text-base font-black text-gray-900 mb-3 flex items-center gap-2">
-                                            <Star className="w-4 h-4 text-purple-600" />
-                                            {locale === 'ar' ? "المكونات / المواد" : "Ingredients / Materials"}
-                                        </h3>
-                                        <div className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">{product.ingredients}</div>
-                                    </section>
+                                ))}
+                                {product.videoUrl && (
+                                    <div className="w-full relative rounded-2xl overflow-hidden shadow-lg border-4 border-emerald-50">
+                                        <video src={product.videoUrl} controls playsInline preload="metadata" className="w-full h-auto bg-black" />
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -310,35 +299,6 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                             )
                         )}
 
-                        {/* ── MOBILE ACCORDION (mobile only) ── */}
-                        {hasRichContent && (
-                            <div className="md:hidden space-y-2">
-                                {displayDescription && (
-                                    <Accordion
-                                        title={locale === 'ar' ? "تفاصيل المنتج" : "Product Description"}
-                                        icon={<FileText className="w-4 h-4 text-emerald-600" />}
-                                    >
-                                        {displayDescription}
-                                    </Accordion>
-                                )}
-                                {product.howToUse && (
-                                    <Accordion
-                                        title={locale === 'ar' ? "طريقة الاستخدام" : "How to Use"}
-                                        icon={<Package className="w-4 h-4 text-blue-600" />}
-                                    >
-                                        {product.howToUse}
-                                    </Accordion>
-                                )}
-                                {product.ingredients && (
-                                    <Accordion
-                                        title={locale === 'ar' ? "المكونات / المواد" : "Ingredients / Materials"}
-                                        icon={<Star className="w-4 h-4 text-purple-600" />}
-                                    >
-                                        {product.ingredients}
-                                    </Accordion>
-                                )}
-                            </div>
-                        )}
 
                         {/* FOMO */}
                         <ProductFOMO stock={product.stock} />
@@ -446,13 +406,64 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                             />
                         </div>
 
-                        {/* Delivery Info */}
-                        <div className="bg-gray-50 p-4 rounded-xl text-sm text-gray-600 flex items-start gap-3 border border-gray-100 mt-4">
-                            <Truck className="w-5 h-5 flex-shrink-0 mt-0.5 text-emerald-600" />
-                            <div>
-                                <p className="font-bold mb-1 text-gray-900">{locale === 'ar' ? 'الشحن والتوصيل' : 'Shipping & Delivery'}</p>
-                                <p className="opacity-90">{locale === 'ar' ? "توصيل مجاني لجميع المدن" : "Free Shipping"}</p>
-                            </div>
+                        {/* ── NEW ACCORDION (Desktop & Mobile) ── */}
+                        <div className="space-y-2">
+                            {/* Description Accordion */}
+                            <Accordion
+                                title={locale === 'ar' ? "الوصف" : "Description"}
+                                icon={<FileText className="w-4 h-4 text-emerald-600" />}
+                            >
+                                <div className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">
+                                    {displayDescription}
+                                </div>
+                            </Accordion>
+
+                            {/* Technical Specifications Accordion */}
+                            {product.technicalSpecifications && product.technicalSpecifications.length > 0 && (
+                                <Accordion
+                                    title={locale === 'ar' ? "المواصفات الفنية" : "Technical Specifications"}
+                                    icon={<Star className="w-4 h-4 text-blue-600" />}
+                                >
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm text-gray-600 border border-gray-200 rounded-lg">
+                                            <thead>
+                                                <tr className="bg-gray-50">
+                                                    <th className="px-4 py-2 text-right font-bold text-gray-900 border-b">
+                                                        {locale === 'ar' ? 'المواصفة' : 'Specification'}
+                                                    </th>
+                                                    <th className="px-4 py-2 text-left font-bold text-gray-900 border-b">
+                                                        {locale === 'ar' ? 'القيمة' : 'Value'}
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {product.technicalSpecifications.map((spec: any, index: number) => (
+                                                    <tr key={index} className="hover:bg-gray-50">
+                                                        <td className="px-4 py-2 text-right font-medium border-b border-gray-100">
+                                                            {spec.key}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-left border-b border-gray-100">
+                                                            {spec.value}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </Accordion>
+                            )}
+
+                            {/* Shipping & Delivery Accordion */}
+                            <Accordion
+                                title={locale === 'ar' ? "الشحن والتوصيل" : "Shipping & Delivery"}
+                                icon={<Truck className="w-4 h-4 text-purple-600" />}
+                            >
+                                <div className="text-gray-600 leading-relaxed text-sm">
+                                    {locale === 'ar' 
+                                        ? 'الدفع عند الاستلام. مدة التوصيل بين 24 و 72 ساعة لجميع المدن في المغرب.'
+                                        : 'Cash on delivery. Delivery time is between 24 and 72 hours to all cities in Morocco.'}
+                                </div>
+                            </Accordion>
                         </div>
                     </div>
                 </div>
@@ -499,6 +510,36 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                     {locale === 'ar' ? 'اطلب الان' : 'Order Now'}
                 </button>
             </div>
+
+            {/* Lightbox Modal */}
+            {lightboxOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={() => setLightboxOpen(false)}
+                >
+                    <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
+                        <button
+                            onClick={() => setLightboxOpen(false)}
+                            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition z-10"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                        <div className="relative w-full h-full flex items-center justify-center">
+                            <img
+                                src={lightboxImage}
+                                alt="Product image fullscreen"
+                                className="max-w-full max-h-full object-contain select-none"
+                                onContextMenu={(e) => e.preventDefault()}
+                                draggable={false}
+                            />
+                            {/* Watermark in lightbox */}
+                            <div className="absolute bottom-4 right-4 text-white opacity-60 pointer-events-none select-none font-bold text-lg">
+                                Luxe Store
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

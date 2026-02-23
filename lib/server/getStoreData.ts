@@ -27,9 +27,12 @@ async function fetchStoreData(): Promise<StoreData> {
         // Sanitize Settings
         const rawSettings = settingsSnap.exists() ? settingsSnap.data() : {};
 
-        // Optimized Image Filter: 50KB limit (Prevents MB-sized Base64 crashes)
+        // Simple Image Validation: Only check if it's a valid image string
         const safeImage = (img: any) => {
-            if (typeof img === 'string') return img.length > 50000 ? null : img;
+            if (typeof img === 'string') {
+                // Allow any Base64 or HTTP image - no size restrictions
+                return img;
+            }
             if (img && typeof img === 'object' && img.url) return img.url;
             return null;
         };
@@ -57,8 +60,8 @@ async function fetchStoreData(): Promise<StoreData> {
             const data = doc.data();
             const processImages = (imgs: any) => {
                 if (Array.isArray(imgs)) {
-                    // Limit to 2 images for listing performance
-                    return imgs.slice(0, 2).map(safeImage).filter(Boolean);
+                    // Return all images for homepage display (limit to 5 for performance)
+                    return imgs.slice(0, 5).map(safeImage).filter(Boolean);
                 }
                 if (imgs) return [safeImage(imgs)].filter(Boolean);
                 return [];
@@ -98,11 +101,11 @@ async function fetchStoreData(): Promise<StoreData> {
     }
 }
 
-// v3: Optimized Payload (50kb img limit, 200 items)
+// v4: Increased image size limit and cache duration
 export const getStoreData = unstable_cache(
     async () => fetchStoreData(),
-    ['store-data-v3'],
-    { revalidate: 60, tags: ['store-data'] }
+    ['store-data-v4'],
+    { revalidate: 30, tags: ['store-data'] }
 );
 
 // Fetch SINGLE Product for SEO (Server Component)

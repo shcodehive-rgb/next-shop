@@ -32,3 +32,13 @@ export function getProductTitle(title: any): string {
     }
     return String(title);
 }
+
+// Specialized helper for Category Titles (Prefers FR > AR > EN)
+export function getCategoryTitle(name: any): string {
+    if (!name) return "Uncategorized";
+    if (typeof name === 'string') return name;
+    if (typeof name === 'object') {
+        return name['fr'] || name['ar'] || name['en'] || "Uncategorized";
+    }
+    return String(name);
+}

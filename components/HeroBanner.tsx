@@ -6,7 +6,18 @@ interface HeroBannerProps {
 }
 
 export default function HeroBanner({ image }: HeroBannerProps) {
-    if (!image) return null;
+    if (!image) {
+        // Show loading skeleton while image is loading
+        return (
+            <div className="w-full">
+                <Link href="/products" className="block w-full">
+                    <div className="relative aspect-[16/6] md:aspect-[16/5] overflow-hidden bg-gray-100 animate-pulse">
+                        <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200" />
+                    </div>
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full relative">

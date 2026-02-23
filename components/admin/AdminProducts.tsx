@@ -4,14 +4,13 @@ import { useState } from "react";
 import { useShop, Product } from "@/context/ShopContext";
 import { toast } from "sonner";
 import { Save, Plus, Trash2, Edit, Image as ImageIcon, Loader2 } from "lucide-react";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getProductTitle } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { translateText } from "@/lib/translateText";
 import { Video, ImagePlus, X } from "lucide-react";
-import { uploadImageToStorage } from "@/lib/storage-utils";
+import { uploadImageToStorage, uploadVideoToStorage } from "@/lib/storage-utils";
 
 export default function AdminProducts() {
     const { products, addProduct, updateProduct, deleteProduct, categories } = useShop();
@@ -27,7 +26,7 @@ export default function AdminProducts() {
         highlights: "", howToUse: "", ingredients: "",
         videoUrl: "", richContentImages: [] as string[],
         showInMidPageSlider: false,
-
+        technicalSpecifications: [] as { key: string; value: string }[],
         metaTitle: "", metaDescription: "",
         bundles: [] as { qty: number; price: number; badgeText?: string }[]
     };
@@ -103,29 +102,32 @@ export default function AdminProducts() {
             ingredients: p.ingredients || "",
             videoUrl: p.videoUrl || "",
             richContentImages: p.richContentImages || [],
+            showInMidPageSlider: p.showInMidPageSlider || false,
+            technicalSpecifications: p.technicalSpecifications || [],
 
             metaTitle: p.metaTitle || "",
             metaDescription: p.metaDescription || "",
             bundles: p.bundles || [],
-            shipping_type: p.shipping_type || "standard",
-            showInMidPageSlider: p.showInMidPageSlider || false,
+            shipping_type: p.shipping_type || "standard"
         });
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     // Video Upload Handler
-    const handleVideoUpload = async (file: File) => {
+    const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (!file) return;
         const toastId = toast.loading("Uploading video...");
         try {
-            const storageRef = ref(storage, `videos/${Date.now()}_${file.name}`);
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
-            setFormData(prev => ({ ...prev, videoUrl: url }));
+            const reader = new FileReader();
+            reader.onload = () => {
+                setFormData(prev => ({ ...prev, videoUrl: reader.result as string }));
+            };
+            reader.readAsDataURL(file);
             toast.success("Video uploaded!", { id: toastId });
         } catch (error) {
             console.error(error);
-            toast.error("Video upload failed", { id: toastId });
+            toast.error("Failed to upload video", { id: toastId });
         }
     };
 
@@ -253,6 +255,61 @@ export default function AdminProducts() {
                             <label className="block text-xs font-bold text-gray-500 mb-1">{t('min_wholesale')}</label>
                             <input type="number" value={formData.minWholesaleQty} onChange={e => setFormData({ ...formData, minWholesaleQty: Number(e.target.value) })} className="w-full p-3 bg-gray-50 border rounded-xl font-bold text-gray-900" />
                         </div>
+                        {/* NEW: Technical Specifications */}
+                        <div className="col-span-2 border-t pt-4">
+                            <label className="block text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                                <Plus className="w-4 h-4 text-blue-600" /> {t('technical_specifications') || "Technical Specifications"}
+                            </label>
+                            <div className="space-y-3">
+                                {formData.technicalSpecifications.map((spec, index) => (
+                                    <div key={index} className="flex gap-2 items-center">
+                                        <input
+                                            type="text"
+                                            placeholder={t('spec_key') || "Key (e.g., Power)"}
+                                            value={spec.key}
+                                            onChange={(e) => {
+                                                const newSpecs = [...formData.technicalSpecifications];
+                                                newSpecs[index].key = e.target.value;
+                                                setFormData({ ...formData, technicalSpecifications: newSpecs });
+                                            }}
+                                            className="flex-1 p-2 border rounded-lg font-medium"
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder={t('spec_value') || "Value (e.g., 1500W)"}
+                                            value={spec.value}
+                                            onChange={(e) => {
+                                                const newSpecs = [...formData.technicalSpecifications];
+                                                newSpecs[index].value = e.target.value;
+                                                setFormData({ ...formData, technicalSpecifications: newSpecs });
+                                            }}
+                                            className="flex-1 p-2 border rounded-lg"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newSpecs = formData.technicalSpecifications.filter((_, i) => i !== index);
+                                                setFormData({ ...formData, technicalSpecifications: newSpecs });
+                                            }}
+                                            className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({
+                                        ...formData,
+                                        technicalSpecifications: [...formData.technicalSpecifications, { key: "", value: "" }]
+                                    })}
+                                    className="text-sm font-bold text-blue-700 flex items-center gap-2 hover:underline"
+                                >
+                                    <Plus className="w-4 h-4" /> {t('add_specification') || "Add New Specification"}
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Discount Fields */}
                         <div className="col-span-1">
                             <label className="block text-xs font-bold text-gray-500 mb-1">{t('original_price')}</label>

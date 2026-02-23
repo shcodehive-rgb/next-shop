@@ -5,7 +5,7 @@ import { useShop } from "@/context/ShopContext";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import { getLocalized } from "@/lib/utils";
-import { Lock, LogOut, Package, Tag, Palette, Settings, Star, FileText, Truck, ShoppingBag, Menu, X, Users } from "lucide-react";
+import { Lock, LogOut, Package, Tag, Palette, Settings, Star, FileText, Truck, ShoppingBag, Menu, X, Users, PenTool } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Sub-Components
@@ -15,9 +15,9 @@ import AdminCategories from "@/components/admin/AdminCategories";
 import AdminDesign from "@/components/admin/AdminDesign";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminReviews from "@/components/admin/AdminReviews";
-import AdminPages from "@/components/admin/AdminPages";
-import AdminShipping from "@/components/admin/AdminShipping";
+import AdminShipping from "@/components/admin/AdminOrders";
 import AdminOrders from "@/components/admin/AdminOrders";
+import AdminBlogs from "@/components/admin/AdminBlogs";
 
 export default function AdminPage() {
     const { settings } = useShop();
@@ -27,7 +27,7 @@ export default function AdminPage() {
     const router = useRouter();
 
     // Key State
-    const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'orders' | 'customers' | 'design' | 'settings' | 'reviews' | 'pages' | 'shipping'>('orders');
+    const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'orders' | 'customers' | 'design' | 'settings' | 'reviews' | 'shipping' | 'blogs'>('orders');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Auth State
@@ -99,7 +99,7 @@ export default function AdminPage() {
         { id: 'shipping', label: t('shipping'), icon: Truck },
         { id: 'design', label: t('design'), icon: Palette },
         { id: 'reviews', label: t('reviews'), icon: Star },
-        { id: 'pages', label: t('pages'), icon: FileText },
+        { id: 'blogs', label: t('blogs') || 'المدونة', icon: PenTool },
         { id: 'settings', label: t('settings'), icon: Settings },
     ];
 
@@ -221,7 +221,7 @@ export default function AdminPage() {
                         {activeTab === 'shipping' && <AdminShipping />}
                         {activeTab === 'design' && <AdminDesign />}
                         {activeTab === 'reviews' && <AdminReviews />}
-                        {activeTab === 'pages' && <AdminPages />}
+                        {activeTab === 'blogs' && <AdminBlogs />}
                         {activeTab === 'settings' && <AdminSettings />}
                     </div>
                 </div>
