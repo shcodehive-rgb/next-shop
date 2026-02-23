@@ -1,19 +1,8 @@
-import { Metadata } from 'next';
+"use client";
+
 import Link from 'next/link';
 import { useShop } from "@/context/ShopContext";
 import { Calendar, User, Clock, ArrowRight } from 'lucide-react';
-
-// SEO Metadata
-export const metadata: Metadata = {
-  title: 'Blog - Latest Articles & Tips',
-  description: 'Discover our latest articles, product guides, and helpful tips to make the most of your shopping experience.',
-  keywords: 'blog, articles, guides, shopping tips, product reviews',
-  openGraph: {
-    title: 'Blog - Latest Articles & Tips',
-    description: 'Discover our latest articles, product guides, and helpful tips.',
-    type: 'website',
-  },
-};
 
 export default function BlogPage() {
   const { blogs } = useShop();

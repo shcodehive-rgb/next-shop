@@ -2,7 +2,7 @@
 
 import { useShop } from "@/context/ShopContext";
 import { ShoppingCart, Lock, Search, Menu, ChevronDown, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Swal from "sweetalert2";
@@ -13,6 +13,7 @@ import { getCategoryTitle } from "@/lib/utils";
 export default function Navbar() {
     const { settings, cart, searchQuery, setSearchQuery, openCart, categories } = useShop();
     const router = useRouter();
+    const pathname = usePathname();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
@@ -45,7 +46,7 @@ export default function Navbar() {
     // Close mobile menu when route changes
     useEffect(() => {
         setIsMobileMenuOpen(false);
-    }, [router.pathname]);
+    }, [pathname]);
 
     return (
         <header className="w-full bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">

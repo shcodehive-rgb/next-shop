@@ -427,7 +427,7 @@ export default function AdminProducts() {
                                             <input
                                                 type="file"
                                                 accept="video/mp4,video/webm"
-                                                onChange={(e) => e.target.files && handleVideoUpload(e.target.files[0])}
+                                                onChange={handleVideoUpload}
                                                 className="w-full p-2 border rounded-lg"
                                             />
                                             {loading && <div className="absolute right-3 top-3"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div>}

@@ -119,7 +119,6 @@ export default function AdminBlogs() {
         setFormData({ 
             ...formData, 
             title, 
-            slug,
             excerpt: formData.excerpt || title.substring(0, 150) + "..."
         });
     };
@@ -355,11 +354,6 @@ export default function AdminBlogs() {
                                     value={formData.content}
                                     onChange={(value) => setFormData({ ...formData, content: value })}
                                     modules={quillModules}
-                                    ref={(el) => {
-                                        if (el) {
-                                            (window as any).quill = el.getEditor();
-                                        }
-                                    }}
                                 />
                             </div>
                         </div>
