@@ -164,7 +164,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
             return;
         }
         const effectivePrice = getActivePrice();
-        addToCart({ ...product, price: String(effectivePrice) }, selectedVariant || undefined, quantity);
+        addToCart(product, selectedVariant || undefined, quantity);
         if (openDrawer) openCart();
     };
 
@@ -517,12 +517,12 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
             {/* Sticky Mobile CTA */}
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 md:hidden z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex items-center gap-3 animate-in slide-in-from-bottom-full duration-500">
                 <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 font-bold uppercase">{locale === 'ar' ? 'السعر' : 'Price'}</span>
-                    <span className="text-lg font-black text-emerald-600">{product.price} {tCommon('currency')}</span>
+                    <div className="text-xs text-gray-600 font-bold">{locale === 'ar' ? 'السعر' : 'Price'}</div>
+                    <div className="text-lg font-black text-gray-900">{getActivePrice()} {tCommon('currency')}</div>
                 </div>
                 <button
                     onClick={() => {
-                        // First add the item to cart
+                        // Check if product has variants and none selected
                         if (product.variants?.length > 0 && !selectedVariant) {
                             alert(locale === 'ar' ? 'المرجو اختيار المقاس' : 'Please select a variant');
                             return;
@@ -534,9 +534,6 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                         // Calculate new cart total (existing cart + current item)
                         const currentCartTotal = cart.reduce((sum, item) => sum + (Number(item.price) * item.qty), 0);
                         const newCartTotal = currentCartTotal + itemTotal;
-                        
-                        // Add item to cart
-                        addToCart({ ...product, price: String(effectivePrice) }, selectedVariant || undefined, quantity);
                         
                         // Check if total meets MOV
                         if (newCartTotal < 149) {
@@ -555,8 +552,8 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                         <div style="margin-bottom: 16px; line-height: 1.5;">
                                             <span style="color: #374151;">
                                                 ${locale === 'ar' 
-                                                    ? `لقد أضفنا هذا المنتج إلى سلتك! أضف المزيد من المنتجات بقيمة <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
-                                                    : `We've added this product to your cart! Add more products worth <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
+                                                    ? `أضف المزيد من المنتجات بقيمة <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
+                                                    : `Add more products worth <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
                                                 }
                                             </span>
                                         </div>
@@ -574,12 +571,19 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                     // Continue shopping - close modal and stay on page
                                     // Modal already closed by Swal
                                 } else {
-                                    // Go to cart - item already added above
-                                    openCart(); // Open cart drawer to show item was added
+                                    // Add to cart and go to cart - use exact same logic as main button
+                                    if (product.variants?.length > 0 && !selectedVariant) {
+                                        alert(locale === 'ar' ? 'المرجو اختيار المقاس' : 'Please select a variant');
+                                        return;
+                                    }
+                                    const effectivePrice = getActivePrice();
+                                    addToCart(product, selectedVariant || undefined, quantity);
+                                    openCart();
                                 }
                             });
                         } else {
-                            // MOV met, go to cart for checkout
+                            // MOV met, add to cart and go to cart for checkout
+                            addToCart(product, selectedVariant || undefined, quantity);
                             router.push(`/${locale}/products`);
                         }
                     }}

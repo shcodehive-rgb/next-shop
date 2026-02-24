@@ -45,6 +45,9 @@ export default async function LocaleLayout({
 
     return (
         <html lang={locale} dir={dir}>
+            <head>
+                <meta name="facebook-domain-verification" content="xx54atu8vrt2wxv5202ru235c6kra1" />
+            </head>
             <body className={`${tajawal.className} bg-white text-gray-900 antialiased`}>
                 <NextIntlClientProvider messages={messages}>
                     <ShopProvider>
