@@ -80,7 +80,7 @@ function RelatedCard({ product, locale }: { product: any; locale: string }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ProductClient({ initialProduct }: ProductClientProps) {
-    const { products, addToCart, openCart } = useShop();
+    const { products, addToCart, openCart, cart } = useShop();
     const t = useTranslations('Product');
     const tCommon = useTranslations('Common');
     const locale = useLocale();
@@ -522,8 +522,49 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                 </div>
                 <button
                     onClick={() => {
-                        // Always redirect to cart for MOV enforcement
-                        router.push(`/${locale}/products`);
+                        // First add the item to cart
+                        if (product.variants?.length > 0 && !selectedVariant) {
+                            alert(locale === 'ar' ? 'المرجو اختيار المقاس' : 'Please select a variant');
+                            return;
+                        }
+                        
+                        const effectivePrice = getActivePrice();
+                        const itemTotal = Number(effectivePrice) * quantity;
+                        
+                        // Calculate new cart total (existing cart + current item)
+                        const currentCartTotal = cart.reduce((sum, item) => sum + (Number(item.price) * item.qty), 0);
+                        const newCartTotal = currentCartTotal + itemTotal;
+                        
+                        // Add item to cart
+                        addToCart({ ...product, price: String(effectivePrice) }, selectedVariant || undefined, quantity);
+                        
+                        // Check if total meets MOV
+                        if (newCartTotal < 149) {
+                            const remaining = 149 - newCartTotal;
+                            Swal.fire({
+                                icon: 'warning',
+                                title: locale === 'ar' ? 'الحد الأدنى للطلب' : 'Minimum Order Value',
+                                text: locale === 'ar' 
+                                    ? `الحد الأدنى للطلب هو 149 درهم. متبقي لك ${remaining.toFixed(0)} درهم لإتمام الطلب.`
+                                    : `Minimum order is 149 DH. You need ${remaining.toFixed(0)} DH more to complete your order.`,
+                                confirmButtonText: locale === 'ar' ? 'أضف منتجات أخرى' : 'Add More Products',
+                                confirmButtonColor: '#ef4444',
+                                showCancelButton: true,
+                                cancelButtonText: locale === 'ar' ? 'العودة للسلة' : 'Go to Cart',
+                                cancelButtonColor: '#10b981'
+                            }).then((result: any) => {
+                                if (result.isConfirmed) {
+                                    // Continue shopping - go to products page
+                                    router.push(`/${locale}/products`);
+                                } else {
+                                    // Go to cart
+                                    router.push(`/${locale}/products`);
+                                }
+                            });
+                        } else {
+                            // MOV met, go to cart for checkout
+                            router.push(`/${locale}/products`);
+                        }
                     }}
                     className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition"
                 >
