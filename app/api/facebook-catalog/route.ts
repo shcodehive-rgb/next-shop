@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, limit } from "firebase/firestore";
-import { unstable_cache } from "next/cache";
+import { collection, getDocs, query, limit } from "firebase/firestore";
 
-// Cache for 1 hour to improve performance
-export const revalidate = 3600;
+// Cache disabled for immediate updates
+export const revalidate = 0;
 
 interface Product {
     id: string;
@@ -54,35 +53,22 @@ function formatPrice(price: string): string {
     return cleanPrice ? `${cleanPrice} MAD` : "0 MAD";
 }
 
-// Fetch active products from Firestore
+// Fetch all products from Firestore
 async function fetchActiveProducts(): Promise<Product[]> {
     try {
-        // First try to query only visible products
-        let productsQuery;
-        try {
-            productsQuery = query(
-                collection(db, "products"),
-                where("visible", "==", true),
-                limit(1000)
-            );
-        } catch (error) {
-            // If visible field doesn't exist or has mixed types, fetch all products
-            console.warn("⚠️ Could not filter by visible field, fetching all products");
-            productsQuery = query(
-                collection(db, "products"),
-                limit(1000)
-            );
-        }
-
+        const productsQuery = query(
+            collection(db, "products"),
+            limit(1000)
+        );
+        
         const querySnapshot = await getDocs(productsQuery);
         const products: Product[] = [];
-
+        
         querySnapshot.forEach((doc) => {
             const data = doc.data();
             
-            // Only include products that have basic required fields and are visible (or visible is undefined)
-            const isVisible = data.visible === true || data.visible === undefined;
-            if (isVisible && data.title && data.price && (data.image || data.images)) {
+            // Only include products that have basic required fields
+            if (data.title && data.price && (data.image || data.images)) {
                 products.push({
                     id: doc.id,
                     title: data.title,
@@ -93,11 +79,11 @@ async function fetchActiveProducts(): Promise<Product[]> {
                     stock: data.stock,
                     category: data.category,
                     visible: data.visible
-                } as Product);
+                });
             }
         });
-
-        console.log(`✅ Fetched ${products.length} active products for Facebook catalog`);
+        
+        console.log(`✅ Fetched ${products.length} products for Facebook catalog`);
         return products;
     } catch (error) {
         console.error("🔥 Error fetching products for Facebook catalog:", error);
@@ -107,7 +93,7 @@ async function fetchActiveProducts(): Promise<Product[]> {
 
 // Generate XML for Facebook Commerce Manager
 function generateXML(products: Product[]): string {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3001";
+    const baseUrl = "https://store.idmisk.com";
     
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
@@ -147,12 +133,10 @@ function generateXML(products: Product[]): string {
     return xml;
 }
 
-// Cached function to get products
-const getCatalogProducts = unstable_cache(
-    async () => fetchActiveProducts(),
-    ["facebook-catalog-products"],
-    { revalidate: 3600, tags: ["facebook-catalog"] }
-);
+// Get products for Facebook catalog
+async function getCatalogProducts(): Promise<Product[]> {
+    return await fetchActiveProducts();
+}
 
 export async function GET() {
     try {
@@ -168,7 +152,7 @@ export async function GET() {
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
 <channel>
 <title>Product Catalog</title>
-<link>${process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3001"}</link>
+<link>https://store.idmisk.com</link>
 <description>Product catalog for Facebook and Instagram Shopping</description>
 </channel>
 </rss>`;
