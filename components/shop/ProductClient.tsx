@@ -565,7 +565,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                 showCancelButton: true,
                                 showConfirmButton: true,
                                 confirmButtonText: locale === 'ar' ? 'إضافة للسلة ومتابعة التسوق' : 'Add to cart & Continue Shopping',
-                                cancelButtonText: locale === 'ar' ? 'تصفح السلة' : 'View Cart',
+                                cancelButtonText: locale === 'ar' ? 'أضف للسلة' : 'View Cart',
                                 confirmButtonColor: '#10b981',
                                 cancelButtonColor: '#6b7280',
                                 reverseButtons: locale === 'ar'

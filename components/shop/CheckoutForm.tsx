@@ -97,7 +97,7 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                 confirmButtonText: locale === 'ar' ? 'أضف منتجات أخرى' : 'Add More Products',
                 confirmButtonColor: '#10b981',
                 showCancelButton: true,
-                cancelButtonText: locale === 'ar' ? 'العودة للسلة' : 'Go to Cart',
+                cancelButtonText: locale === 'ar' ? 'أضف للسلة' : 'Go to Cart',
                 cancelButtonColor: '#6b7280',
                 reverseButtons: locale === 'ar'
             }).then((result: any) => {
