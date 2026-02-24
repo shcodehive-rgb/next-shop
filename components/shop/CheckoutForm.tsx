@@ -86,10 +86,10 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                         </div>
                         <div style="margin-bottom: 16px; line-height: 1.5;">
                             <span style="color: #374151;">
-                                ${locale === 'ar' 
-                                    ? `أضف المزيد من المنتجات بقيمة <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
-                                    : `Add more products worth <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
-                                }
+                                ${locale === 'ar'
+                        ? `أضف المزيد من المنتجات بقيمة <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
+                        : `Add more products worth <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
+                    }
                             </span>
                         </div>
                     </div>
@@ -102,8 +102,12 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                 reverseButtons: locale === 'ar'
             }).then((result: any) => {
                 if (result.isDismissed) {
-                    // Go to cart - open cart drawer to show items
-                    openCart(); // Open cart drawer instead of redirecting
+                    // "أضف للسلة" clicked — add item to cart then open drawer
+                    if (onAddToCart) {
+                        onAddToCart(); // already calls addToCart(product, variant, qty) + openCart()
+                    } else {
+                        openCart();
+                    }
                 }
             });
             setLoading(false);

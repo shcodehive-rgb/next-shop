@@ -73,8 +73,8 @@ export default function HomeClient({ initialProducts, initialCategories, initial
     return (
         <div className="min-h-screen bg-white pb-20 font-tajawal">
 
-            {/* 1. TOP BANNER */}
-            {settings.heroImage && <HeroBanner image={settings.heroImage} />}
+            {/* 1. TOP BANNER — always rendered so skeleton shows immediately */}
+            <HeroBanner image={settings.heroImage || ''} />
 
             {/* 2. CIRCULAR CATEGORIES */}
             <div className="container mx-auto px-4 my-6">
