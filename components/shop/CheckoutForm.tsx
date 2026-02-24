@@ -26,7 +26,7 @@ export interface CheckoutFormProps {
 
 export default function CheckoutForm({ product, className = "", directOrder, onAddToCart }: CheckoutFormProps) {
     // @ts-ignore
-    const { settings, getShippingCost, cart, clearCart, removeFromCart } = useShop();
+    const { settings, getShippingCost, cart, clearCart, removeFromCart, openCart } = useShop();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({ name: "", phone: "", city: "", address: "" });
     const router = useRouter();
@@ -102,8 +102,8 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                 reverseButtons: locale === 'ar'
             }).then((result: any) => {
                 if (result.isDismissed) {
-                    // Go to cart
-                    router.push(`/${locale}/products`);
+                    // Go to cart - open cart drawer to show items
+                    openCart(); // Open cart drawer instead of redirecting
                 }
             });
             setLoading(false);

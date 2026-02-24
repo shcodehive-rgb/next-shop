@@ -25,7 +25,10 @@ function escapeXml(unsafe: string): string {
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+        .replace(/'/g, "&apos;")
+        .replace(/\n/g, "&#10;")
+        .replace(/\r/g, "&#13;")
+        .replace(/\t/g, "&#9;");
 }
 
 // Helper function to get title in preferred language
@@ -111,7 +114,7 @@ function generateXML(products: Product[]): string {
 <channel>
 <title>Product Catalog</title>
 <link>${baseUrl}</link>
-<description>Product catalog for Facebook & Instagram Shopping</description>
+<description>Product catalog for Facebook and Instagram Shopping</description>
 `;
 
     products.forEach((product) => {
@@ -166,7 +169,7 @@ export async function GET() {
 <channel>
 <title>Product Catalog</title>
 <link>${process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3001"}</link>
-<description>Product catalog for Facebook & Instagram Shopping</description>
+<description>Product catalog for Facebook and Instagram Shopping</description>
 </channel>
 </rss>`;
             

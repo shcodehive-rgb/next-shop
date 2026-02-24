@@ -574,8 +574,8 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                     // Continue shopping - close modal and stay on page
                                     // Modal already closed by Swal
                                 } else {
-                                    // Go to cart
-                                    router.push(`/${locale}/products`);
+                                    // Go to cart - item already added above
+                                    openCart(); // Open cart drawer to show item was added
                                 }
                             });
                         } else {
