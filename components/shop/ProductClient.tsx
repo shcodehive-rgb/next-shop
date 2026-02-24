@@ -542,20 +542,37 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                         if (newCartTotal < 149) {
                             const remaining = 149 - newCartTotal;
                             Swal.fire({
-                                icon: 'warning',
-                                title: locale === 'ar' ? 'الحد الأدنى للطلب' : 'Minimum Order Value',
-                                text: locale === 'ar' 
-                                    ? `الحد الأدنى للطلب هو 149 درهم. متبقي لك ${remaining.toFixed(0)} درهم لإتمام الطلب.`
-                                    : `Minimum order is 149 DH. You need ${remaining.toFixed(0)} DH more to complete your order.`,
-                                confirmButtonText: locale === 'ar' ? 'أضف منتجات أخرى' : 'Add More Products',
-                                confirmButtonColor: '#ef4444',
+                                icon: 'info',
+                                title: locale === 'ar' ? 'خطوة بسيطة لتأكيد طلبك!' : 'A simple step to confirm your order!',
+                                html: `
+                                    <div style="text-align: ${locale === 'ar' ? 'right' : 'left'}; direction: ${locale === 'ar' ? 'rtl' : 'ltr'};">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                                            <span style="font-size: 24px;">🎁</span>
+                                            <span style="color: #10b981; font-weight: bold; font-size: 16px;">
+                                                ${locale === 'ar' ? 'لضمان أفضل خدمة، المنتجات التي يقل سعرها عن 149 درهم تُباع كإضافة لطلبات أخرى.' : 'For the best service, products under 149 DH are sold as add-ons to other orders.'}
+                                            </span>
+                                        </div>
+                                        <div style="margin-bottom: 16px; line-height: 1.5;">
+                                            <span style="color: #374151;">
+                                                ${locale === 'ar' 
+                                                    ? `لقد أضفنا هذا المنتج إلى سلتك! أضف المزيد من المنتجات بقيمة <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
+                                                    : `We've added this product to your cart! Add more products worth <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+                                `,
                                 showCancelButton: true,
-                                cancelButtonText: locale === 'ar' ? 'العودة للسلة' : 'Go to Cart',
-                                cancelButtonColor: '#10b981'
+                                showConfirmButton: true,
+                                confirmButtonText: locale === 'ar' ? 'إضافة للسلة ومتابعة التسوق' : 'Add to cart & Continue Shopping',
+                                cancelButtonText: locale === 'ar' ? 'تصفح السلة' : 'View Cart',
+                                confirmButtonColor: '#10b981',
+                                cancelButtonColor: '#6b7280',
+                                reverseButtons: locale === 'ar'
                             }).then((result: any) => {
                                 if (result.isConfirmed) {
-                                    // Continue shopping - go to products page
-                                    router.push(`/${locale}/products`);
+                                    // Continue shopping - close modal and stay on page
+                                    // Modal already closed by Swal
                                 } else {
                                     // Go to cart
                                     router.push(`/${locale}/products`);
