@@ -33,9 +33,14 @@ export default function ProductsPage() {
       </div>
 
       <div className="container mx-auto px-4 py-6">
+        {/* Mobile filter button row — ShopSidebar renders this via lg:hidden */}
+        <div className="lg:hidden mb-4">
+          <ShopSidebar />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar: Categories + Price Filter */}
-          <div className="lg:col-span-1">
+          {/* Sidebar — desktop only */}
+          <div className="hidden lg:block lg:col-span-1">
             <ShopSidebar />
           </div>
 
@@ -45,6 +50,7 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }

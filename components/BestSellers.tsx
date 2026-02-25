@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef } from 'react';
 import Link from 'next/link';
+import { MoveRight, MoveLeft } from 'lucide-react';
 import ProductCard from './shop/ProductCard';
 import { useTranslations, useLocale } from "next-intl";
 
@@ -49,13 +50,15 @@ export default function BestSellers({ products }: { products: any[] }) {
         </div>
 
         {/* View More Button */}
-        <div className="flex justify-center mt-10">
+        <div className="flex justify-center mt-12">
           <Link
             href={`/${locale}/best-sellers`}
-            className="group inline-flex items-center gap-2 px-8 py-3.5 rounded-full border-2 border-emerald-600 text-emerald-700 font-bold text-base hover:bg-emerald-600 hover:text-white transition-all duration-300 hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 active:scale-95"
+            className="group inline-flex items-center gap-3 px-10 py-3 rounded-full border border-emerald-400 text-emerald-700 font-light tracking-widest text-sm uppercase hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-500 hover:shadow-lg hover:shadow-emerald-100 hover:-translate-y-0.5 active:scale-95"
           >
             <span>{locale === 'ar' ? 'رؤية المزيد' : 'View More'}</span>
-            <span className="transform transition-transform duration-300 group-hover:translate-x-1 rtl:rotate-180">→</span>
+            {isRTL
+              ? <MoveLeft className="w-4 h-4 stroke-[1.25] transition-transform duration-500 group-hover:-translate-x-1" />
+              : <MoveRight className="w-4 h-4 stroke-[1.25] transition-transform duration-500 group-hover:translate-x-1" />}
           </Link>
         </div>
       </div>

@@ -43,11 +43,16 @@ export default function CollectionClient({ initialProducts, categoryName }: Prop
                 </div>
             </div>
 
+            {/* Mobile filter button row */}
+            <div className="lg:hidden container mx-auto px-4 pt-4">
+                <ShopSidebar />
+            </div>
+
             {/* Layout: Sidebar + Grid */}
             <div className="container mx-auto px-4 py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    {/* Sidebar — identical to All Products page */}
-                    <div className="lg:col-span-1">
+                    {/* Sidebar — desktop only */}
+                    <div className="hidden lg:block lg:col-span-1">
                         <ShopSidebar />
                     </div>
 

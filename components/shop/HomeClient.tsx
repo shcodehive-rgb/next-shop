@@ -12,6 +12,7 @@ import HomepageReviews from "@/components/HomepageReviews";
 import StoreReviews from "@/components/StoreReviews";
 import CategoryProducts from "@/components/shop/CategoryProducts";
 import MidPageSlider from "@/components/shop/MidPageSlider";
+import CategoryShowcase from "@/components/shop/CategoryShowcase";
 
 interface HomeClientProps {
     initialProducts?: Product[];
@@ -118,6 +119,9 @@ export default function HomeClient({ initialProducts, initialCategories, initial
                     link={settings.middleBannerLink || "#products"}
                 />
             )}
+
+            {/* 6. CATEGORY SHOWCASE — 4 products per category, below promo banner */}
+            <CategoryShowcase products={products} categories={categories} />
 
             {/* 6. MID-PAGE NETFLIX SLIDER (products tagged showInMidPageSlider) */}
             <MidPageSlider products={products} />
