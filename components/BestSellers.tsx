@@ -1,5 +1,6 @@
 "use client";
 import React, { useRef } from 'react';
+import Link from 'next/link';
 import ProductCard from './shop/ProductCard';
 import { useTranslations, useLocale } from "next-intl";
 
@@ -46,9 +47,18 @@ export default function BestSellers({ products }: { products: any[] }) {
             </div>
           </div>
         </div>
+
+        {/* View More Button */}
+        <div className="flex justify-center mt-10">
+          <Link
+            href={`/${locale}/products`}
+            className="group inline-flex items-center gap-2 px-8 py-3.5 rounded-full border-2 border-emerald-600 text-emerald-700 font-bold text-base hover:bg-emerald-600 hover:text-white transition-all duration-300 hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 active:scale-95"
+          >
+            <span>{locale === 'ar' ? 'رؤية المزيد' : 'View More'}</span>
+            <span className="transform transition-transform duration-300 group-hover:translate-x-1 rtl:rotate-180">→</span>
+          </Link>
+        </div>
       </div>
-
-
     </section>
   );
 }

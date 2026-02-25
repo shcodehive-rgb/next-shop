@@ -76,6 +76,12 @@
         "title": "جميع المنتجات",
         "load_more": "تحميل المزيد"
     },
+    "PriceFilter": {
+        "title": "فلترة الأسعار",
+        "minimum_price": "أدنى سعر",
+        "maximum_price": "أقصى سعر",
+        "clear_filter": "مسح الفلتر"
+    },
     "StoreReviews": {
         "title": "ماذا يقول عنا الزبناء؟"
     },

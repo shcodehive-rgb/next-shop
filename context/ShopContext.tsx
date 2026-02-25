@@ -186,6 +186,9 @@ interface ShopContextType {
     // Search & Filtering
     searchQuery: string;
     setSearchQuery: (query: string) => void;
+    priceFilter: { min: number; max: number };
+    setPriceFilter: (filter: { min: number; max: number }) => void;
+    getFilteredProducts: () => Product[];
     filteredProducts: Product[];
     isStoreActive: boolean;
 
@@ -219,6 +222,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const [orders, setOrders] = useState<Order[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+    const [priceFilter, setPriceFilter] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
     const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
     const [blogs, setBlogs] = useState<Blog[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -232,6 +236,14 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const closeCart = () => setIsCartOpen(false);
     const openCheckout = () => setIsCheckoutOpen(true);
     const closeCheckout = () => setIsCheckoutOpen(false);
+
+    // Price filtering functions
+    const getFilteredProducts = () => {
+        return products.filter(product => {
+            const price = Number(product.price);
+            return price >= priceFilter.min && price <= priceFilter.max;
+        });
+    };
 
     // 🔥 1. REAL-TIME DATA SYNC
     useEffect(() => {
@@ -516,9 +528,14 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         return defaultRate ? defaultRate.price : 0;
     };
 
-    // --- SEARCH ---
+    // --- SEARCH & PRICE FILTER ---
     const filteredProducts = products.filter(p => {
         const query = searchQuery.toLowerCase();
+        const price = Number(p.price);
+
+        // Price filter
+        const priceMatch = price >= priceFilter.min && price <= priceFilter.max;
+        if (!priceMatch) return false;
 
         // Handle title - could be string or object {ar, en, fr}
         let titleMatch = false;
@@ -569,6 +586,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 getShippingCost,
                 searchQuery,
                 setSearchQuery,
+                priceFilter,
+                setPriceFilter,
+                getFilteredProducts,
                 filteredProducts,
                 isStoreActive,
                 isCartOpen,

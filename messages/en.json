@@ -76,6 +76,12 @@
         "title": "All Products",
         "load_more": "Load More"
     },
+    "PriceFilter": {
+        "title": "Price Filter",
+        "minimum_price": "Minimum Price",
+        "maximum_price": "Maximum Price",
+        "clear_filter": "Clear Filter"
+    },
     "StoreReviews": {
         "title": "What Our Customers Say"
     },

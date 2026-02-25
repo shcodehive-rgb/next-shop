@@ -5,9 +5,10 @@ import ProductGrid from "@/components/ProductGrid";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import PriceFilter from "@/components/PriceFilter";
 
 export default function ProductsPage() {
-  const { products } = useShop();
+  const { filteredProducts } = useShop();
   const locale = useLocale();
   const t = useTranslations('Common');
 
@@ -26,7 +27,19 @@ export default function ProductsPage() {
         </div>
       </div>
       
-      <ProductGrid products={products} />
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Price Filter */}
+          <div className="lg:col-span-1">
+            <PriceFilter />
+          </div>
+          
+          {/* Products Grid */}
+          <div className="lg:col-span-3">
+            <ProductGrid products={filteredProducts} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
