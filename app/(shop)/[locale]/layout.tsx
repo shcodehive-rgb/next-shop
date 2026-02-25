@@ -23,6 +23,9 @@ const tajawal = Tajawal({
 export const metadata = {
     title: "Next Shop | Premium E-commerce",
     description: "The best place to shop online.",
+    verification: {
+        google: "QQ75Z1qsvcfpD-e_SmARENQNgnEAP6iz6UqNbzBELRo",
+    },
 };
 
 export default async function LocaleLayout({
