@@ -16,6 +16,8 @@ interface Product {
     description?: string | { ar?: string; en?: string; fr?: string };
     category?: string;
     visible?: boolean;
+    createdAt?: string;   // ISO string or Firestore Timestamp
+    updatedAt?: string;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -64,6 +66,15 @@ async function fetchProducts(): Promise<Product[]> {
         if (!d.title || !d.price) return;
         if (!d.image && (!d.images || d.images.length === 0)) return;
 
+        // Normalise Firestore Timestamp → ISO string
+        const toIso = (v: any): string | undefined => {
+            if (!v) return undefined;
+            if (typeof v === 'string') return v;
+            if (v?.toDate) return (v.toDate() as Date).toISOString();
+            if (v?.seconds) return new Date(v.seconds * 1000).toISOString();
+            return undefined;
+        };
+
         products.push({
             id: doc.id,
             title: d.title,
@@ -73,6 +84,8 @@ async function fetchProducts(): Promise<Product[]> {
             description: d.description,
             category: d.category,
             visible: d.visible,
+            createdAt: toIso(d.createdAt),
+            updatedAt: toIso(d.updatedAt),
         });
     });
 
@@ -80,6 +93,13 @@ async function fetchProducts(): Promise<Product[]> {
 }
 
 // ── XML builder ───────────────────────────────────────────────────────────────
+
+/** Convert an ISO date string to RFC-822 format required by RSS */
+function toRfc822(iso?: string): string {
+    if (!iso) return new Date(0).toUTCString(); // epoch fallback — stable, won't re-trigger automation
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? new Date(0).toUTCString() : d.toUTCString();
+}
 
 function buildRss(products: Product[]): string {
     const now = new Date().toUTCString();
@@ -112,7 +132,7 @@ function buildRss(products: Product[]): string {
     ${mediaContent}
     <price xmlns="https://store.idmisk.com/rss">${price} MAD</price>
     <category>${escapeXml(product.category || "General")}</category>
-    <pubDate>${now}</pubDate>
+    <pubDate>${toRfc822(product.createdAt || product.updatedAt)}</pubDate>
   </item>`;
         })
         .join("\n");

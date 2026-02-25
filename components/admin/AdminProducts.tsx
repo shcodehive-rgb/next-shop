@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import { translateText } from "@/lib/translateText";
 import { Video, ImagePlus, X } from "lucide-react";
 import { uploadImageToStorage, uploadVideoToStorage } from "@/lib/storage-utils";
+import { notifyMakeWebhook } from "@/lib/makeWebhook";
 
 export default function AdminProducts() {
     const { products, addProduct, updateProduct, deleteProduct, categories } = useShop();
@@ -62,6 +63,8 @@ export default function AdminProducts() {
                 };
                 addProduct(newProduct);
                 await setDoc(doc(db, "products", newProduct.id), newProduct);
+                // 🔔 Notify Make.com — fire-and-forget, never blocks save
+                notifyMakeWebhook(newProduct);
                 toast.success(t('success_add'));
             }
             setFormData(defaultForm);

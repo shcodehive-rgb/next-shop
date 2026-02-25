@@ -19,35 +19,57 @@ export async function generateMetadata(
     const product = await getProduct(params.id);
 
     if (!product) {
-        return {
-            title: 'Product Not Found',
-        };
+        return { title: 'Product Not Found' };
     }
 
-    // Use SEO fields if available, otherwise fallback
-    const title = product.metaTitle || (typeof product.title === 'string' ? product.title : (product.title as any)[params.locale] || "Product");
-    const description = product.metaDescription || (typeof product.description === 'string' ? product.description : (product.description as any)[params.locale] || "Product details");
+    const BASE_URL = 'https://store.idmisk.com';
+    const locale = params.locale;
 
-    // Images
-    const previousImages = (await parent).openGraph?.images || [];
-    const productImages = product.images || (product.image ? [product.image] : []);
+    // Title & description
+    const title = product.metaTitle
+        || (typeof product.title === 'string' ? product.title : (product.title as any)?.[locale] || 'Product');
+    const rawDesc = product.metaDescription
+        || (typeof product.description === 'string' ? product.description : (product.description as any)?.[locale] || '');
+    const description = rawDesc.substring(0, 160);
+
+    // Primary image — must be absolute URL for Facebook
+    const productImages: string[] = product.images?.length
+        ? product.images
+        : product.image ? [product.image] : [];
+
+    const toAbsolute = (url: string) =>
+        url.startsWith('http') ? url : `${BASE_URL}${url}`;
+
+    // OG image objects with explicit dimensions (Facebook needs these)
+    const ogImages = productImages.slice(0, 3).map((url: string) => ({
+        url: toAbsolute(url),
+        width: 1200,
+        height: 630,
+        alt: title,
+    }));
+
+    const productUrl = `${BASE_URL}/${locale}/product/${product.id}`;
 
     return {
-        title: title,
-        description: description.substring(0, 160), // standard SEO limit
+        title,
+        description,
         openGraph: {
-            title: title,
-            description: description,
-            images: [...productImages, ...previousImages],
+            type: 'website',
+            url: productUrl,
+            title,
+            description,
+            images: ogImages,
+            siteName: 'Idmisk Store',
         },
         twitter: {
             card: 'summary_large_image',
-            title: title,
-            description: description,
-            images: productImages,
+            title,
+            description,
+            images: productImages.slice(0, 1).map(toAbsolute),
         },
     };
 }
+
 
 // 2. Server Component
 export default async function ProductPage(props: Props) {
