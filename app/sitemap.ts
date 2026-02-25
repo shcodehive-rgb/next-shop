@@ -1,12 +1,14 @@
 import { MetadataRoute } from "next";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, limit } from "firebase/firestore";
 import { BASE_URL, CITIES, INTENTS, buildExploreSlug } from "@/lib/seo-config";
+import { getStoreData } from "@/lib/server/getStoreData";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 3600; // regenerate hourly
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const now = new Date();
 
-    // ── Core static pages ──────────────────────────────────────────────────────
+    // ── Core static pages ─────────────────────────────────────────────────────
     const staticPages: MetadataRoute.Sitemap = [
         { url: BASE_URL, lastModified: now, priority: 1.0, changeFrequency: "daily" },
         { url: `${BASE_URL}/ar`, lastModified: now, priority: 1.0, changeFrequency: "daily" },
@@ -15,50 +17,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${BASE_URL}/ar/contact`, lastModified: now, priority: 0.5, changeFrequency: "monthly" },
     ];
 
-    // ── Firestore data ─────────────────────────────────────────────────────────
+    // ── Firestore data via getStoreData (already server-safe + cached) ────────
     let productEntries: MetadataRoute.Sitemap = [];
     let collectionEntries: MetadataRoute.Sitemap = [];
-    let categoryData: { id: string; slug?: string }[] = [];
+    let categoryIds: string[] = [];
 
     try {
-        const [productsSnap, categoriesSnap] = await Promise.all([
-            getDocs(query(collection(db, "products"), limit(500))),
-            getDocs(collection(db, "categories")),
-        ]);
+        const { products, categories } = await getStoreData();
 
-        // Product pages
-        productEntries = productsSnap.docs
-            .filter((doc) => doc.data().visible !== false)
-            .map((doc) => ({
-                url: `${BASE_URL}/ar/product/${doc.id}`,
+        productEntries = products
+            .filter((p) => p.visible !== false)
+            .map((p) => ({
+                url: `${BASE_URL}/ar/product/${p.id}`,
                 lastModified: now,
                 priority: 0.85,
                 changeFrequency: "weekly" as const,
             }));
 
-        // Category collection pages
-        categoryData = categoriesSnap.docs.map((doc) => ({
-            id: doc.id,
-            slug: doc.data().slug || doc.id,
-        }));
-
-        collectionEntries = categoryData.map((cat) => ({
-            url: `${BASE_URL}/ar/collection/${cat.id}`,
+        collectionEntries = categories.map((c) => ({
+            url: `${BASE_URL}/ar/collection/${c.id}`,
             lastModified: now,
             priority: 0.8,
             changeFrequency: "daily" as const,
         }));
+
+        categoryIds = categories.map((c) => c.id);
     } catch (err) {
-        console.error("[sitemap] Firestore error:", err);
+        console.error("[sitemap] getStoreData error:", err);
     }
 
-    // ── Programmatic explore pages (city × category × intent) ─────────────────
+    // ── Explore pages: city × category × intent ───────────────────────────────
+    // Fall back to sensible slugs if no categories loaded yet
+    const catSlugs = categoryIds.length > 0
+        ? categoryIds
+        : ["beauty", "home", "sports", "electronics", "fashion", "skincare"];
+
     const exploreEntries: MetadataRoute.Sitemap = [];
-
-    const catSlugs = categoryData.length > 0
-        ? categoryData.map((c) => c.slug || c.id)
-        : ["beauty", "home", "sports", "electronics", "fashion"]; // fallback
-
     for (const intent of INTENTS) {
         for (const catSlug of catSlugs) {
             for (const city of CITIES) {
