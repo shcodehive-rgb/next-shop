@@ -23,10 +23,34 @@ export default function CategoryShowcase({ products, categories }: Props) {
     return (
         <div className="space-y-16">
             {categories.map((category) => {
-                // Latest 4 products in this category (visible only)
+                // Fuzzy match: product.category may be stored as an ID *or* as a name string
+                const matches = (p: Product) => {
+                    const pCat = (p.category || "").trim().toLowerCase();
+                    if (!pCat) return false;
+
+                    const id = (category.id || "").toLowerCase();
+                    const nameAr = typeof category.name === "string"
+                        ? category.name.toLowerCase()
+                        : ((category.name as any)?.ar || "").toLowerCase();
+                    const nameEn = typeof category.name === "string"
+                        ? category.name.toLowerCase()
+                        : ((category.name as any)?.en || "").toLowerCase();
+                    const nameFr = typeof category.name === "string"
+                        ? ""
+                        : ((category.name as any)?.fr || "").toLowerCase();
+
+                    return (
+                        pCat === id ||
+                        pCat === nameAr ||
+                        pCat === nameEn ||
+                        pCat === nameFr
+                    );
+                };
+
                 const catProducts = products
-                    .filter((p) => p.category === category.id && p.visible !== false)
+                    .filter((p) => matches(p) && p.visible !== false)
                     .slice(0, 4);
+
 
                 if (catProducts.length === 0) return null;
 
