@@ -17,14 +17,14 @@ export default function PriceFilter() {
         const value = e.target.value;
         setLocalMin(value);
         const numValue = parseInt(value) || 0;
-        setPriceFilter(prev => ({ ...prev, min: numValue }));
+        setPriceFilter({ ...priceFilter, min: numValue });
     };
 
     const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setLocalMax(value);
         const numValue = parseInt(value) || 1000;
-        setPriceFilter(prev => ({ ...prev, max: numValue }));
+        setPriceFilter({ ...priceFilter, max: numValue });
     };
 
     const clearFilter = () => {
@@ -51,7 +51,7 @@ export default function PriceFilter() {
                     </button>
                 )}
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -72,7 +72,7 @@ export default function PriceFilter() {
                         />
                     </div>
                 </div>
-                
+
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                         {locale === 'ar' ? 'أقصى سعر' : 'Maximum Price'}
