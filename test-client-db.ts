@@ -21,7 +21,8 @@ async function testClient() {
         const snap = await getDocs(collection(db, "products"));
         console.log(`Client SDK fetched ${snap.size} products.`);
     } catch (e) {
-        console.error("Client SDK Fetch Error:", e.name, e.message);
+        const error = e as Error;
+        console.error("Client SDK Fetch Error:", error.name, error.message);
     }
 }
 
