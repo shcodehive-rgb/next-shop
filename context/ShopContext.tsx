@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { db, rtdb } from "@/lib/firebase";
 import { ref, onValue } from "firebase/database";
+import { adminSetDoc, adminUpdateDoc, adminDeleteDoc } from "@/app/actions/admin";
 
 // --- TYPES ---
 export interface Review {
@@ -366,7 +367,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // إضافة منتج (يكتب في Firebase مباشرة)
     const addProduct = async (p: Product) => {
         try {
-            await setDoc(doc(db, "products", p.id), p);
+            await adminSetDoc("products", p.id, p, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error adding product", e);
         }
@@ -375,7 +376,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // تحديث منتج
     const updateProduct = async (id: string, p: Partial<Product>) => {
         try {
-            await updateDoc(doc(db, "products", id), p);
+            await adminUpdateDoc("products", id, p, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error updating product", e);
         }
@@ -384,7 +385,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // حذف منتج
     const deleteProduct = async (id: string) => {
         try {
-            await deleteDoc(doc(db, "products", id));
+            await adminDeleteDoc("products", id, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error deleting product", e);
         }
@@ -393,7 +394,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // إضافة تصنيف
     const addCategory = async (c: Category) => {
         try {
-            await setDoc(doc(db, "categories", c.id), c);
+            await adminSetDoc("categories", c.id, c, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error adding category", e);
         }
@@ -402,7 +403,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // حذف تصنيف
     const deleteCategory = async (id: string) => {
         try {
-            await deleteDoc(doc(db, "categories", id));
+            await adminDeleteDoc("categories", id, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error deleting category", e);
         }
@@ -411,7 +412,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // تحديث الإعدادات
     const updateSettings = async (s: Partial<SiteSettings>) => {
         try {
-            await setDoc(doc(db, "settings", "general"), s, { merge: true });
+            await adminSetDoc("settings", "general", s, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error saving settings", e);
         }
@@ -420,7 +421,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // Blog Management Functions
     const addBlog = async (b: Blog) => {
         try {
-            await setDoc(doc(db, "blogs", b.id), b);
+            await adminSetDoc("blogs", b.id, b, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error adding blog", e);
         }
@@ -428,7 +429,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
     const updateBlog = async (id: string, b: Partial<Blog>) => {
         try {
-            await updateDoc(doc(db, "blogs", id), b);
+            await adminUpdateDoc("blogs", id, b, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error updating blog", e);
         }
@@ -436,7 +437,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
     const deleteBlog = async (id: string) => {
         try {
-            await deleteDoc(doc(db, "blogs", id));
+            await adminDeleteDoc("blogs", id, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error deleting blog", e);
         }
@@ -498,7 +499,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     // --- SHIPPING RATES ---
     const addShippingRate = async (rate: ShippingRate) => {
         try {
-            await setDoc(doc(db, "shipping_rates", rate.id), rate);
+            await adminSetDoc("shipping_rates", rate.id, rate, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error adding shipping rate", e);
         }
@@ -506,7 +507,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
     const updateShippingRate = async (id: string, rate: Partial<ShippingRate>) => {
         try {
-            await updateDoc(doc(db, "shipping_rates", id), rate);
+            await adminUpdateDoc("shipping_rates", id, rate, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error updating shipping rate", e);
         }
@@ -514,7 +515,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
     const deleteShippingRate = async (id: string) => {
         try {
-            await deleteDoc(doc(db, "shipping_rates", id));
+            await adminDeleteDoc("shipping_rates", id, settings?.adminPassword || "123456");
         } catch (e) {
             console.error("Error deleting shipping rate", e);
         }

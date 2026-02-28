@@ -151,7 +151,7 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
             }
 
             // ---------------------------------------------------------
-            // 🆕 CUSTOMER DATA COLLECTION (Firestore)
+            // 🆕 CUSTOMER DATA COLLECTION (Firestore Server Action)
             // ---------------------------------------------------------
             try {
                 // Normalized Phone (Remove spaces, dashes)
@@ -162,37 +162,17 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                 // @ts-ignore
                 const currentInterests = Array.from(new Set(itemsToOrder.map(i => i.category || "General")));
 
-                const { doc, setDoc, getDoc, serverTimestamp, increment, arrayUnion } = await import("firebase/firestore");
-                const { db } = await import("@/lib/firebase");
-
-                const customerRef = doc(db, "customers", customerId);
-                const customerSnap = await getDoc(customerRef);
-
-                if (customerSnap.exists()) {
-                    // Update existing customer
-                    await setDoc(customerRef, {
-                        totalSpent: increment(finalTotal),
-                        ordersCount: increment(1),
-                        interests: arrayUnion(...currentInterests),
-                        lastOrder: new Date().toISOString(),
-                        city: formData.city || customerSnap.data().city || "",
-                        name: formData.name || customerSnap.data().name || ""
-                    }, { merge: true });
-                } else {
-                    // Create new customer
-                    await setDoc(customerRef, {
-                        id: customerId,
-                        name: formData.name,
-                        phone: formData.phone,
-                        city: formData.city,
-                        totalSpent: finalTotal,
-                        ordersCount: 1,
-                        interests: currentInterests,
-                        lastOrder: new Date().toISOString()
-                    });
-                }
+                const { recordCustomerPurchase } = await import("@/app/actions/checkout");
+                await recordCustomerPurchase({
+                    id: customerId,
+                    name: formData.name,
+                    phone: formData.phone,
+                    city: formData.city,
+                    totalSpent: finalTotal,
+                    interests: currentInterests as string[]
+                });
             } catch (err) {
-                console.error("Failed to save customer data", err);
+                console.error("Failed to save customer data via server action", err);
                 // Non-blocking error
             }
             // ---------------------------------------------------------

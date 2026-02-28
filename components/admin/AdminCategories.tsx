@@ -31,8 +31,7 @@ export default function AdminCategories() {
             const imageRef = catImage || "https://placehold.co/400?text=Category";
             const newCategory: Category = { id: Date.now().toString(), name: translatedName, image: imageRef };
 
-            addCategory(newCategory);
-            await setDoc(doc(db, "categories", newCategory.id), newCategory);
+            await addCategory(newCategory);
 
             toast.success(t('success_add'));
             setCatName("");

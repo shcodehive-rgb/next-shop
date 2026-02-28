@@ -48,8 +48,7 @@ export default function AdminProducts() {
                     title: translatedTitle,
                     originalPrice: formData.originalPrice ? Number(formData.originalPrice) : 0
                 };
-                updateProduct(editingId, updateData as Partial<Product>);
-                await setDoc(doc(db, "products", editingId), { ...updateData, id: editingId }, { merge: true });
+                await updateProduct(editingId, updateData as Partial<Product>);
                 toast.success(t('success_update'));
                 setEditingId(null);
             } else {
@@ -61,8 +60,7 @@ export default function AdminProducts() {
                     image: formData.images[0] || formData.image || "https://placehold.co/400?text=No+Image",
                     images: formData.images.length > 0 ? formData.images : (formData.image ? [formData.image] : [])
                 };
-                addProduct(newProduct);
-                await setDoc(doc(db, "products", newProduct.id), newProduct);
+                await addProduct(newProduct);
                 // 🔔 Notify Make.com — fire-and-forget, never blocks save
                 notifyMakeWebhook(newProduct);
                 toast.success(t('success_add'));
