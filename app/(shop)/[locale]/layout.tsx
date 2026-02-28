@@ -21,8 +21,15 @@ const tajawal = Tajawal({
 });
 
 export const metadata = {
-    title: "Next Shop | Premium E-commerce",
-    description: "The best place to shop online.",
+    title: "Luxe Store | أفضل منتجات بجودة عالية",
+    description: "وجهتكم الأولى للتسوق الإلكتروني. نقدم لكم أفضل المنتجات بجودة عالية وتوصيل سريع. اكتشفوا تشكيلتنا الحصرية في Luxe Store.",
+    openGraph: {
+        images: ['/store-preview.png'],
+    },
+    twitter: {
+        card: "summary_large_image",
+        images: ['/store-preview.png'],
+    },
     verification: {
         google: "QQ75Z1qsvcfpD-e_SmARENQNgnEAP6iz6UqNbzBELRo",
     },

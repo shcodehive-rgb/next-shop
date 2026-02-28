@@ -5,6 +5,7 @@ import { ShoppingCart, Lock, Search, Menu, ChevronDown, X } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import Swal from "sweetalert2";
 import { useTranslations, useLocale } from "next-intl";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -61,9 +62,9 @@ export default function Navbar() {
                     >
                         {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
-                    
-                    <Link href="/" className="text-lg font-bold text-gray-800 tracking-tight">
-                        {settings.storeName}
+
+                    <Link href="/" className="flex items-center gap-2 text-xl font-bold text-gray-800 tracking-tight">
+                        <span>Luxe Store</span>
                     </Link>
                 </div>
 
@@ -83,13 +84,13 @@ export default function Navbar() {
 
                 {/* Center: Navigation Menu (Desktop) */}
                 <nav className="hidden md:flex items-center gap-8">
-                    <Link 
-                        href="/" 
+                    <Link
+                        href="/"
                         className="text-gray-700 hover:text-emerald-600 font-medium transition-colors"
                     >
                         {locale === 'ar' ? 'الرئيسية' : 'Home'}
                     </Link>
-                    
+
                     {/* Products Dropdown */}
                     <div className="relative" ref={dropdownRef}>
                         <button
@@ -100,9 +101,9 @@ export default function Navbar() {
                             {locale === 'ar' ? 'المنتجات' : 'Products'}
                             <ChevronDown className={`w-4 h-4 transition-transform ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
-                        
+
                         {isProductsDropdownOpen && (
-                            <div 
+                            <div
                                 className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg py-2"
                                 onMouseLeave={() => setIsProductsDropdownOpen(false)}
                             >
@@ -124,9 +125,9 @@ export default function Navbar() {
                             </div>
                         )}
                     </div>
-                    
-                    <Link 
-                        href="/blog" 
+
+                    <Link
+                        href="/blog"
                         className="text-gray-700 hover:text-emerald-600 font-medium transition-colors"
                     >
                         {locale === 'ar' ? 'المدونة' : 'Blog'}
@@ -169,13 +170,13 @@ export default function Navbar() {
             {isMobileMenuOpen && (
                 <div className="md:hidden border-t border-gray-100 bg-white">
                     <nav className="container mx-auto px-4 py-4 space-y-2">
-                        <Link 
-                            href="/" 
+                        <Link
+                            href="/"
                             className="block py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
                         >
                             {locale === 'ar' ? 'الرئيسية' : 'Home'}
                         </Link>
-                        
+
                         {/* Mobile Products Section */}
                         <div className="py-2">
                             <button
@@ -185,7 +186,7 @@ export default function Navbar() {
                                 {locale === 'ar' ? 'المنتجات' : 'Products'}
                                 <ChevronDown className={`w-4 h-4 transition-transform ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
-                            
+
                             {isProductsDropdownOpen && (
                                 <div className="mt-2 pl-4 space-y-1">
                                     {categories && categories.length > 0 ? (
@@ -206,9 +207,9 @@ export default function Navbar() {
                                 </div>
                             )}
                         </div>
-                        
-                        <Link 
-                            href="/blog" 
+
+                        <Link
+                            href="/blog"
                             className="block py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
                         >
                             {locale === 'ar' ? 'المدونة' : 'Blog'}
