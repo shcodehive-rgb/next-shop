@@ -18,7 +18,7 @@ export default function HeroBanner({ image }: HeroBannerProps) {
 
                     {/* Skeleton shimmer — always visible until image loads */}
                     <div
-                        className={`absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse transition-opacity duration-500 ${loaded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                        className={`absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse transition-opacity duration-200 ${loaded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                     />
 
                     {/* Real image — crossfades in once loaded */}
@@ -27,7 +27,7 @@ export default function HeroBanner({ image }: HeroBannerProps) {
                             src={image}
                             alt="Store Banner"
                             fill
-                            className={`object-cover w-full h-full transition-opacity duration-700 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+                            className={`object-cover w-full h-full transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
                             priority
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
                             unoptimized
