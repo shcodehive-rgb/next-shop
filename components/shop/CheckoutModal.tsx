@@ -169,36 +169,25 @@ export default function CheckoutModal({ isOpen, onClose, product }: CheckoutModa
                 console.log("✅ FB Browser Purchase Sent");
             }
 
-            // B. Server-Side CAPI
-            if (settings.facebookAccessToken && settings.facebookPixelId) {
-                try {
-                    fetch('/api/fb-conversion', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            event_name: 'Purchase',
-                            event_time: Math.floor(Date.now() / 1000),
-                            event_id: eventID,
-                            pixel_id: settings.facebookPixelId,
-                            access_token: settings.facebookAccessToken,
-                            user_data: {
-                                phone: formData.phone,
-                                city: formData.city,
-                                client_user_agent: navigator.userAgent
-                            },
-                            custom_data: {
-                                value: total,
-                                currency: 'MAD',
-                                content_ids: items.map(i => i.id),
-                                content_name: items.map(i => getProductTitle(i.title)).join(', ')
-                            }
-                        })
-                    });
-                    console.log("✅ FB CAPI Purchase Sent");
-                } catch (err) {
-                    console.error("CAPI Trigger Failed", err);
-                }
-            }
+            // B. Server-Side CAPI (always fires — uses env-var credentials)
+            fetch('/api/meta-events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_name: 'Purchase',
+                    event_id: eventID, // deduplication key matches browser pixel above
+                    event_source_url: window.location.href,
+                    phone: formData.phone,
+                    custom_data: {
+                        value: total,
+                        currency: 'MAD',
+                        content_ids: items.map(i => i.id),
+                        content_type: 'product',
+                        content_name: items.map(i => getProductTitle(i.title)).join(', ')
+                    }
+                })
+            }).catch(err => console.error('CAPI Purchase Error:', err));
+            console.log('✅ FB CAPI Purchase Sent', eventID);
 
             // @ts-ignore
             if (window.ttq && settings.tiktokPixelId) {

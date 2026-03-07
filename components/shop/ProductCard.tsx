@@ -100,10 +100,23 @@ export default function ProductCard({ product, onClick, priority = false, forceS
             addToCart(product);
             openCart();
             toast.success(`${displayTitle} added to cart!`);
+            // Deduplication ID — ties browser pixel + CAPI together
+            const addToCartEventId = (crypto.randomUUID ? crypto.randomUUID() : `atc_${Date.now()}`);
             // @ts-ignore
-            if (window.fbq) window.fbq('track', 'AddToCart', { content_name: displayTitle, content_ids: [product.id], content_type: 'product', value: price, currency: 'MAD' });
+            if (window.fbq) window.fbq('track', 'AddToCart', { content_name: displayTitle, content_ids: [product.id], content_type: 'product', value: price, currency: 'MAD' }, { eventID: addToCartEventId });
             // @ts-ignore
             if (window.ttq) window.ttq.track('AddToCart', { content_id: product.id, content_type: 'product', content_name: displayTitle, value: price, currency: 'MAD' });
+            // Server-side CAPI (deduplication via matching eventID)
+            fetch('/api/meta-events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                event_name: 'AddToCart',
+                event_id: addToCartEventId,
+                event_source_url: window.location.href,
+                custom_data: { value: price, currency: 'MAD', content_ids: [product.id], content_type: 'product', content_name: displayTitle }
+              })
+            }).catch(() => { });
           }}
           className="absolute bottom-3 right-3 z-20 bg-white text-emerald-600 p-2.5 rounded-full shadow-lg hover:bg-emerald-600 hover:text-white hover:scale-110 active:scale-95 transition-all duration-300"
           aria-label="Add to cart"

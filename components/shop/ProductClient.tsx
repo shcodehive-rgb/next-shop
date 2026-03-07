@@ -135,14 +135,27 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
         displayDescription = (product.description as any)[locale] || (product.description as any)['ar'] || "";
     }
 
-    // Pixel tracking
+    // Pixel tracking — ViewContent with CAPI deduplication
     useEffect(() => {
         if (product) {
             const price = Number(product.price);
+            const viewEventId = (crypto.randomUUID ? crypto.randomUUID() : `vc_${product.id}_${Date.now()}`);
+            // Browser pixel
             // @ts-ignore
-            if (window.fbq) window.fbq('track', 'ViewContent', { content_name: displayTitle, content_ids: [product.id], content_type: 'product', value: price, currency: 'MAD' });
+            if (window.fbq) window.fbq('track', 'ViewContent', { content_name: displayTitle, content_ids: [product.id], content_type: 'product', value: price, currency: 'MAD' }, { eventID: viewEventId });
             // @ts-ignore
             if (window.ttq) window.ttq.track('ViewContent', { content_id: product.id, content_type: 'product', content_name: displayTitle, value: price, currency: 'MAD' });
+            // Server-side CAPI (same eventID for deduplication)
+            fetch('/api/meta-events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_name: 'ViewContent',
+                    event_id: viewEventId,
+                    event_source_url: window.location.href,
+                    custom_data: { value: price, currency: 'MAD', content_ids: [product.id], content_type: 'product', content_name: displayTitle }
+                })
+            }).catch(() => { });
         }
     }, [product, displayTitle]);
 
@@ -222,12 +235,12 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                     setLightboxOpen(true);
                                 }}
                             />
-                            
+
                             {/* Watermark Overlay */}
                             <div className="absolute bottom-4 right-4 text-white opacity-40 pointer-events-none select-none font-bold text-sm">
                                 Luxe Store
                             </div>
-                            
+
                             {showDiscount && (
                                 <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold z-10 shadow-md">
                                     {product.discountLabel}
@@ -241,11 +254,11 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                 {images.map((img: string, idx: number) => (
                                     <button key={idx} onClick={() => setSelectedImage(idx)}
                                         className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition select-none ${selectedImage === idx ? 'border-emerald-600' : 'border-gray-200'}`}>
-                                        <Image 
-                                            src={img} 
-                                            alt="" 
-                                            fill 
-                                            className="object-cover select-none" 
+                                        <Image
+                                            src={img}
+                                            alt=""
+                                            fill
+                                            className="object-cover select-none"
                                             unoptimized={!isRemote(img)}
                                             onContextMenu={(e) => e.preventDefault()}
                                             draggable={false}
@@ -260,13 +273,13 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                             <div className="space-y-4 mt-2">
                                 {product.richContentImages?.map((img: string, idx: number) => (
                                     <div key={idx} className="w-full relative shadow-sm rounded-2xl overflow-hidden select-none">
-                                        <Image 
-                                            src={img} 
-                                            alt={`Detail ${idx + 1}`} 
-                                            width={1200} 
+                                        <Image
+                                            src={img}
+                                            alt={`Detail ${idx + 1}`}
+                                            width={1200}
                                             height={1600}
-                                            className="w-full h-auto object-cover select-none" 
-                                            unoptimized 
+                                            className="w-full h-auto object-cover select-none"
+                                            unoptimized
                                             onContextMenu={(e) => e.preventDefault()}
                                             draggable={false}
                                         />
@@ -476,7 +489,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                 icon={<Truck className="w-4 h-4 text-purple-600" />}
                             >
                                 <div className="text-gray-600 leading-relaxed text-sm">
-                                    {locale === 'ar' 
+                                    {locale === 'ar'
                                         ? 'الدفع عند الاستلام. مدة التوصيل بين 24 و 72 ساعة لجميع المدن في المغرب.'
                                         : 'Cash on delivery. Delivery time is between 24 and 72 hours to all cities in Morocco.'}
                                 </div>
@@ -527,14 +540,14 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                             alert(locale === 'ar' ? 'المرجو اختيار المقاس' : 'Please select a variant');
                             return;
                         }
-                        
+
                         const effectivePrice = getActivePrice();
                         const itemTotal = Number(effectivePrice) * quantity;
-                        
+
                         // Calculate new cart total (existing cart + current item)
                         const currentCartTotal = cart.reduce((sum, item) => sum + (Number(item.price) * item.qty), 0);
                         const newCartTotal = currentCartTotal + itemTotal;
-                        
+
                         // Check if total meets MOV
                         if (newCartTotal < 149) {
                             const remaining = 149 - newCartTotal;
@@ -551,10 +564,10 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                         </div>
                                         <div style="margin-bottom: 16px; line-height: 1.5;">
                                             <span style="color: #374151;">
-                                                ${locale === 'ar' 
-                                                    ? `أضف المزيد من المنتجات بقيمة <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
-                                                    : `Add more products worth <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
-                                                }
+                                                ${locale === 'ar'
+                                        ? `أضف المزيد من المنتجات بقيمة <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
+                                        : `Add more products worth <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
+                                    }
                                             </span>
                                         </div>
                                     </div>
@@ -595,7 +608,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
 
             {/* Lightbox Modal */}
             {lightboxOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
                     onClick={() => setLightboxOpen(false)}
                 >
