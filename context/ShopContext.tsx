@@ -531,6 +531,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
     // --- SEARCH & PRICE FILTER ---
     const filteredProducts = products.filter(p => {
+        // Exclude products explicitly hidden by admin
+        if (p.visible === false) return false;
+
         const query = searchQuery.toLowerCase();
         const price = Number(p.price);
 
@@ -538,7 +541,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         const priceMatch = price >= priceFilter.min && price <= priceFilter.max;
         if (!priceMatch) return false;
 
-        // Handle title - could be string or object {ar, en, fr}
+        // When there's no search query, include all (price-matched) products
+        if (!query) return true;
+
+        // Handle title — could be string or object {ar, en, fr}
         let titleMatch = false;
         if (typeof p.title === 'string') {
             titleMatch = p.title.toLowerCase().includes(query);

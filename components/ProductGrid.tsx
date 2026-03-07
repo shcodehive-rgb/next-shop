@@ -1,17 +1,39 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProductCard from "./shop/ProductCard";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 interface ProductGridProps {
   products: any[];
+  searchQuery?: string; // optional: passed from parent to reset pagination
 }
 
-export default function ProductGrid({ products }: ProductGridProps) {
-  const [visibleCount, setVisibleCount] = useState(12); // Start with 12 items (4x3)
+export default function ProductGrid({ products, searchQuery = "" }: ProductGridProps) {
+  const [visibleCount, setVisibleCount] = useState(12);
   const t = useTranslations('ProductGrid');
+  const locale = useLocale();
 
-  if (!products || products.length === 0) return null;
+  // Reset pagination whenever the query or product list changes
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [searchQuery, products.length]);
+
+  // Empty state — shown when search/filter returns no results
+  if (!products || products.length === 0) {
+    return (
+      <div className="py-20 flex flex-col items-center justify-center text-center px-4">
+        <div className="text-5xl mb-4">🔍</div>
+        <h3 className="text-xl font-bold text-gray-700 mb-2">
+          {locale === "ar" ? "لا توجد منتجات مطابقة" : "No products found"}
+        </h3>
+        <p className="text-gray-400 text-sm">
+          {locale === "ar"
+            ? "حاول البحث بكلمة مختلفة أو تصفح الفئات"
+            : "Try a different search term or browse our categories"}
+        </p>
+      </div>
+    );
+  }
 
   const visibleProducts = products.slice(0, visibleCount);
   const hasMore = visibleCount < products.length;

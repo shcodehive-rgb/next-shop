@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import ShopSidebar from "@/components/shop/ShopSidebar";
 
 export default function ProductsPage() {
-  const { filteredProducts } = useShop();
+  const { filteredProducts, searchQuery } = useShop();
   const locale = useLocale();
 
   return (
@@ -46,7 +46,7 @@ export default function ProductsPage() {
 
           {/* Products Grid */}
           <div className="lg:col-span-3">
-            <ProductGrid products={filteredProducts} />
+            <ProductGrid products={filteredProducts} searchQuery={searchQuery} />
           </div>
         </div>
       </div>

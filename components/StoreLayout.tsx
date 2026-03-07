@@ -6,15 +6,17 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CheckoutModal from "@/components/shop/CheckoutModal";
 import CartDrawer from "@/components/shop/CartDrawer";
-
 import TopAnnouncement from "@/components/TopAnnouncement";
-
 import { useShop } from "@/context/ShopContext";
+import { useMetaPageView } from "@/hooks/useMetaPageView";
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isAdmin = pathname.startsWith("/admin");
     const { isCheckoutOpen, closeCheckout } = useShop();
+
+    // 🔥 Server-side Meta CAPI PageView — fires on every route change
+    useMetaPageView();
 
     // Admin pages handle their own layout for now (or full screen)
     if (isAdmin) {
