@@ -3,11 +3,12 @@
 import { useShop } from "@/context/ShopContext";
 import { Facebook, Instagram, Heart, ShieldCheck, Truck, Scale, Phone } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 export default function Footer() {
     const { settings } = useShop();
-    const t = useTranslations('Footer'); // Ensure you have translations or use hardcoded Arabic if preferred by user request "Arabic Footer"
+    const t = useTranslations('Footer');
+    const locale = useLocale();
 
     return (
         <footer className="bg-gray-900 text-gray-300 pt-16 pb-8 font-tajawal border-t border-gray-800">
@@ -47,7 +48,7 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/#products" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                <Link href={`/${locale}/products`} className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
                                     المنتجات
                                 </Link>

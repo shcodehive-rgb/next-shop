@@ -4,17 +4,20 @@ import { useShop } from "@/context/ShopContext";
 import { useTranslations, useLocale } from "next-intl";
 import {
     ArrowLeft, Star, Truck, ShieldCheck, FileText, Package,
-    ChevronDown, X
+    ChevronDown, X, Clock, CheckCircle, XCircle, RefreshCw
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CheckoutForm from "@/components/shop/CheckoutForm";
 import ProductFOMO from "@/components/shop/ProductFOMO";
 import RecentlyViewed from "@/components/shop/RecentlyViewed";
+import ProductReviews from "@/components/shop/ProductReviews";
 import { addToRecentlyViewed } from "@/lib/recentlyViewed";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
+import { rtdb } from "@/lib/firebase";
+import { ref as dbRef, onValue, off } from "firebase/database";
 
 interface ProductClientProps {
     initialProduct: any;
@@ -39,6 +42,144 @@ function Accordion({ title, icon, children }: { title: string; icon: React.React
                 <div className="px-4 py-4 text-gray-600 text-sm leading-relaxed whitespace-pre-line bg-white font-tajawal">
                     {children}
                 </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Order Tracking Stepper ──────────────────────────────────────────────────
+const STEPS = [
+    { key: "pending", labelAr: "تم تسجيل طلبك", labelFr: "Commande reçue", icon: Package },
+    { key: "confirmed", labelAr: "تم تأكيد طلبك", labelFr: "Commande confirmée", icon: CheckCircle },
+    { key: "shipped", labelAr: "طلبك في الطريق إليك", labelFr: "En livraison", icon: Truck },
+    { key: "delivered", labelAr: "تم التوصيل ✅", labelFr: "Livré ✅", icon: CheckCircle },
+];
+
+function statusToStepIndex(status: string): number {
+    const s = (status || "").toLowerCase();
+    if (s === "delivered") return 3;
+    if (s === "shipped") return 2;
+    if (s === "confirmed") return 1;
+    return 0; // new / pending / anything else
+}
+
+function OrderTrackingStepper({
+    orderId, storeName, locale, onDismiss
+}: { orderId: string; storeName: string; locale: string; onDismiss: () => void }) {
+    const isAr = locale === "ar";
+    const [status, setStatus] = useState<string>("pending");
+    const [loading, setLoading] = useState(true);
+    const [cancelled, setCancelled] = useState(false);
+    const listenerRef = useRef<any>(null);
+
+    useEffect(() => {
+        const orderRef = dbRef(rtdb, `orders/${storeName}/${orderId}`);
+        listenerRef.current = orderRef;
+        const unsub = onValue(orderRef, (snap) => {
+            setLoading(false);
+            if (snap.exists()) {
+                const data = snap.val();
+                const s = (data.status || "pending").toLowerCase();
+                setCancelled(s === "cancelled");
+                setStatus(s);
+            }
+        }, () => setLoading(false));
+        return () => {
+            off(orderRef);
+        };
+    }, [orderId, storeName]);
+
+    const currentStep = statusToStepIndex(status);
+    const isDelivered = status === "delivered";
+
+    return (
+        <div className="mt-6 border-t pt-6 animate-in slide-in-from-bottom-4 duration-700">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-emerald-600" />
+                    {isAr ? "تتبع طلبيتك" : "Track Your Order"}
+                </h3>
+                <button
+                    onClick={onDismiss}
+                    className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 flex items-center gap-1 transition"
+                >
+                    <RefreshCw className="w-3 h-3" />
+                    {isAr ? "طلب جديد" : "New order"}
+                </button>
+            </div>
+
+            {/* Order ID badge */}
+            <p className="text-xs text-gray-400 mb-4 font-mono">
+                {isAr ? "رقم الطلب" : "Order ID"}: <span className="font-bold text-gray-600">{orderId}</span>
+            </p>
+
+            {loading ? (
+                <div className="flex items-center justify-center py-8">
+                    <Clock className="w-6 h-6 text-gray-300 animate-pulse" />
+                </div>
+            ) : cancelled ? (
+                /* Cancelled */
+                <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-2xl p-4 text-red-600">
+                    <XCircle className="w-8 h-8 shrink-0" />
+                    <p className="font-bold text-sm">
+                        {isAr ? "تم إلغاء هذه الطلبية. للاستفسار تواصل معنا." : "This order has been cancelled. Please contact us."}
+                    </p>
+                </div>
+            ) : isDelivered ? (
+                /* Delivered — special full-width card */
+                <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-5 flex flex-col items-center gap-2 text-center">
+                    <CheckCircle className="w-12 h-12 text-emerald-600" />
+                    <p className="font-black text-lg text-emerald-700">
+                        {isAr ? "تم توصيل طلبك بنجاح! 🎉" : "Order Delivered! 🎉"}
+                    </p>
+                    <p className="text-sm text-emerald-600">
+                        {isAr ? "شكراً لتسوقك معنا" : "Thank you for shopping with us"}
+                    </p>
+                </div>
+            ) : (
+                /* Progress Stepper */
+                <div className="relative flex items-start justify-between">
+                    {/* Connector line behind the circles */}
+                    <div
+                        className="absolute top-5 h-0.5 bg-gray-200 z-0"
+                        style={{ left: "1.25rem", right: "1.25rem" }}
+                    />
+                    {/* Active progress fill */}
+                    <div
+                        className="absolute top-5 h-0.5 bg-emerald-500 z-0 transition-all duration-700"
+                        style={{
+                            left: "1.25rem",
+                            width: currentStep === 0 ? "0%" : `calc(${(currentStep / (STEPS.length - 1)) * 100}% - 0px)`
+                        }}
+                    />
+                    {STEPS.map((step, idx) => {
+                        const done = idx <= currentStep;
+                        const active = idx === currentStep;
+                        const Icon = step.icon;
+                        return (
+                            <div key={step.key} className="flex flex-col items-center gap-2 z-10 flex-1">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${done
+                                    ? "bg-emerald-600 border-emerald-600 shadow-md shadow-emerald-100"
+                                    : "bg-white border-gray-200"
+                                    } ${active ? "ring-4 ring-emerald-100" : ""}`}>
+                                    <Icon className={`w-5 h-5 ${done ? "text-white" : "text-gray-300"}`} />
+                                </div>
+                                <span className={`text-[11px] font-bold text-center leading-tight ${done ? "text-gray-800" : "text-gray-300"
+                                    }`}>
+                                    {isAr ? step.labelAr : step.labelFr}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Live update hint */}
+            {!loading && (
+                <p className="text-[10px] text-gray-300 text-center mt-4">
+                    🔄 {isAr ? "يتحدث تلقائياً" : "Updates automatically"}
+                </p>
             )}
         </div>
     );
@@ -94,6 +235,28 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
     const [selectedBundleIndex, setSelectedBundleIndex] = useState<number | null>(null);
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxImage, setLightboxImage] = useState<string>("");
+
+    // ── Inline order tracking ─────────────────────────────────────────────────
+    const [activeOrder, setActiveOrder] = useState<{ orderId: string; storeName: string } | null>(null);
+
+    useEffect(() => {
+        if (!product?.id) return;
+        try {
+            const stored: any[] = JSON.parse(localStorage.getItem("activeOrders") || "[]");
+            const match = stored.find(o => Array.isArray(o.productIds) && o.productIds.includes(product.id));
+            if (match) setActiveOrder({ orderId: match.orderId, storeName: match.storeName });
+        } catch (_) { /* ignore */ }
+    }, [product?.id]);
+
+    const dismissStepper = () => {
+        setActiveOrder(null);
+        // Optionally remove only this product's order from localStorage
+        try {
+            const stored: any[] = JSON.parse(localStorage.getItem("activeOrders") || "[]");
+            const updated = stored.filter(o => !(Array.isArray(o.productIds) && o.productIds.includes(product.id)));
+            localStorage.setItem("activeOrders", JSON.stringify(updated));
+        } catch (_) { /* ignore */ }
+    };
 
     useEffect(() => {
         if (selectedBundleIndex !== null && product?.bundles?.[selectedBundleIndex]) {
@@ -314,7 +477,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                         </div>
 
                         {/* Highlights */}
-                        {product.highlights ? (
+                        {product.highlights && (
                             <ul className="space-y-2 font-tajawal">
                                 {product.highlights.split('\n').slice(0, 3).map((line: string, i: number) => (
                                     <li key={i} className="flex items-start gap-2 text-gray-700">
@@ -323,11 +486,8 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                     </li>
                                 ))}
                             </ul>
-                        ) : (
-                            displayDescription && (
-                                <div className="text-gray-600 leading-relaxed text-sm mb-2 line-clamp-3 font-tajawal">{displayDescription}</div>
-                            )
                         )}
+
 
 
                         {/* FOMO */}
@@ -413,28 +573,37 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                             </div>
                         </div>
 
-                        {/* Inline Checkout Form */}
-                        <div id="checkout-form-section" className="mt-6 border-t pt-6 animate-in slide-in-from-bottom-4 duration-700">
-                            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                                <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                                {locale === 'ar' ? 'طلب المنتج الان:' : 'Order Now (Cash on Delivery):'}
-                            </h3>
-                            <CheckoutForm
-                                product={product}
-                                className="bg-emerald-50/50 border-emerald-100 shadow-sm"
-                                directOrder={{
-                                    items: [{
-                                        ...product,
-                                        qty: quantity,
-                                        price: getActivePrice(),
-                                        selectedVariant,
-                                        selectedOptions: selectedVariant ? { Variant: selectedVariant } : {}
-                                    }],
-                                    total: getActivePrice() * quantity
-                                }}
-                                onAddToCart={() => handleAddToCart(true)}
+                        {/* Inline Checkout Form OR Order Tracking Stepper */}
+                        {activeOrder ? (
+                            <OrderTrackingStepper
+                                orderId={activeOrder.orderId}
+                                storeName={activeOrder.storeName}
+                                locale={locale}
+                                onDismiss={dismissStepper}
                             />
-                        </div>
+                        ) : (
+                            <div id="checkout-form-section" className="mt-6 border-t pt-6 animate-in slide-in-from-bottom-4 duration-700">
+                                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                    <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                                    {locale === 'ar' ? 'طلب المنتج الان:' : 'Order Now (Cash on Delivery):'}
+                                </h3>
+                                <CheckoutForm
+                                    product={product}
+                                    className="bg-emerald-50/50 border-emerald-100 shadow-sm"
+                                    directOrder={{
+                                        items: [{
+                                            ...product,
+                                            qty: quantity,
+                                            price: getActivePrice(),
+                                            selectedVariant,
+                                            selectedOptions: selectedVariant ? { Variant: selectedVariant } : {}
+                                        }],
+                                        total: getActivePrice() * quantity
+                                    }}
+                                    onAddToCart={() => handleAddToCart(true)}
+                                />
+                            </div>
+                        )}
 
                         {/* ── NEW ACCORDION (Desktop & Mobile) ── */}
                         <div className="space-y-2">
@@ -497,6 +666,9 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* Customer Photo Reviews */}
+                <ProductReviews productId={product.id} />
 
                 {relatedProducts.length > 0 && (
                     <section className="mt-16 pt-10 border-t border-gray-100">

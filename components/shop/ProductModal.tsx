@@ -48,21 +48,21 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
 
         // Call API
         try {
-            const message = `
-<b>New Order! 🔔</b>
-<b>Product:</b> ${getProductTitle(product.title)}
-<b>Qty:</b> ${qty} ${isWholesaleActive ? '(Wholesale)' : ''}
-<b>Price:</b> ${unitPrice} DH (Total: ${totalPrice})
-<b>Client:</b> ${formData.name}
-<b>Phone:</b> ${formData.phone}
-<b>City:</b> ${formData.city}
-<b>Address:</b> ${(formData as any).address || 'N/A'}
-      `;
-
             await fetch('/api/order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegramId: settings.telegramId, message })
+                body: JSON.stringify({
+                    orderDetails: {
+                        name: formData.name,
+                        phone: formData.phone,
+                        city: formData.city,
+                        address: (formData as any).address || '',
+                        // Pass full title object so server picks Arabic
+                        items: [{ title: product.title, qty }],
+                        total: totalPrice,
+                        shippingCost: 0,
+                    }
+                })
             });
 
             Swal.fire({

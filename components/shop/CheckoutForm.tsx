@@ -150,6 +150,21 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                 // Continue execution - don't block user
             }
 
+            // ── Save to localStorage so product page can show inline tracking stepper ──
+            try {
+                const productIds = itemsToOrder.map((i: any) => i.id).filter(Boolean);
+                const existing: any[] = JSON.parse(localStorage.getItem("activeOrders") || "[]");
+                existing.push({
+                    orderId: orderID,
+                    productIds,
+                    storeName: safeStoreName,
+                    createdAt: new Date().toISOString(),
+                });
+                localStorage.setItem("activeOrders", JSON.stringify(existing));
+            } catch (_) {
+                // localStorage may not be available — non-blocking
+            }
+
             // ---------------------------------------------------------
             // 🆕 CUSTOMER DATA COLLECTION (Firestore Server Action)
             // ---------------------------------------------------------
@@ -182,9 +197,6 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
             const telegramTargetId = settings.telegramNotificationId || settings.telegramId;
 
             try {
-                // Ensure items string is generated exactly as needed
-                const itemsString = itemsToOrder.map((i: any) => `${typeof i.title === 'string' ? i.title : (i.title as any)[locale] || (i.title as any)['en']} (x${i.qty})`).join(", ");
-
                 await fetch('/api/order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -192,10 +204,12 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                         orderDetails: {
                             name: formData.name,
                             phone: formData.phone,
-                            total: finalTotal,
                             city: formData.city,
-                            items: itemsString,
-                            client: { address: formData.address }
+                            address: formData.address,           // top-level for server template
+                            // Pass full title objects so server always picks Arabic
+                            items: itemsToOrder.map((i: any) => ({ title: i.title, qty: i.qty })),
+                            total: finalTotal,
+                            shippingCost: shippingCost,
                         }
                     })
                 });

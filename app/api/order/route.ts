@@ -1,61 +1,76 @@
 import { NextResponse } from "next/server";
 
-
-// ✅ ديري هاد السطر فبلاصتو:
 export const revalidate = 3600;
+
+/** Always returns the Arabic title from a product title object, or the raw string */
+function getArabicTitle(title: any): string {
+    if (!title) return "منتج";
+    if (typeof title === "string") return title;
+    return title["ar"] || title["en"] || title["fr"] || "منتج";
+}
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        console.log("📥 Received API Payload:", JSON.stringify(body, null, 2)); // DEBUG PAYLOAD
 
-        const { orderDetails, message: customMessage } = body;
+        const { orderDetails } = body;
 
-        let message = "";
-
-        if (customMessage) {
-            // Case A: Client sent a ready-to-send message (e.g. ProductModal)
-            message = customMessage;
-        } else if (orderDetails) {
-            // Case B: Client sent details, we build the message (e.g. CheckoutModal)
-            message = `📦 طلبية جديدة!\n\n👤 السمية: ${orderDetails.name}\n📱 التيليفون: ${orderDetails.phone}\n🛍️ المنتجات: ${orderDetails.items || 'Unknown'}\n💰 المجموع: ${orderDetails.total} DH\n🏙️ المدينة: ${orderDetails.city}\n🏠 العنوان: ${orderDetails.client?.address || 'N/A'}`;
-
-        } else {
-            console.error("❌ Missing payload info");
+        if (!orderDetails) {
+            console.error("❌ Missing orderDetails payload");
             return NextResponse.json({ error: "Invalid Data" }, { status: 400 });
         }
 
-        // 1️⃣ Get Credentials from Environment Variables
+        // Resolve item titles to Arabic (items can be a pre-built string or an array)
+        let itemsText = "غير محدد";
+        if (Array.isArray(orderDetails.items)) {
+            itemsText = orderDetails.items
+                .map((i: any) => `${getArabicTitle(i.title)} (x${i.qty || 1})`)
+                .join("، ");
+        } else if (typeof orderDetails.items === "string") {
+            itemsText = orderDetails.items; // already formatted by caller
+        }
+
+        // ── Always Arabic message template ──────────────────────────────────
+        const message = [
+            `📦 <b>طلبية جديدة!</b>`,
+            ``,
+            `👤 <b>الاسم:</b> ${orderDetails.name || "—"}`,
+            `📱 <b>الهاتف:</b> ${orderDetails.phone || "—"}`,
+            `🏙️ <b>المدينة:</b> ${orderDetails.city || "—"}`,
+            `🏠 <b>العنوان:</b> ${orderDetails.address || orderDetails.client?.address || "—"}`,
+            ``,
+            `🛍️ <b>المنتجات:</b>`,
+            `${itemsText}`,
+            ``,
+            `💰 <b>المجموع:</b> ${orderDetails.total} درهم`,
+            orderDetails.shippingCost > 0
+                ? `🚚 <b>الشحن:</b> ${orderDetails.shippingCost} درهم`
+                : `🚚 <b>الشحن:</b> مجاني`,
+        ].join("\n");
+
+        // ── Send to Telegram ────────────────────────────────────────────────
         const telegramId = process.env.TELEGRAM_CHAT_ID;
         const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 
-        // DEBUG: Log what we are using (Masked for safety)
-        console.log(`🚀 Attempting to send to Telegram. ID: ${telegramId}, Token: ${(telegramBotToken || "").substring(0, 10)}...`);
-
         if (!telegramId || !telegramBotToken) {
-            console.error("❌ Telegram Configuration Missing in Environment Variables");
+            console.error("❌ Telegram Configuration Missing");
             return NextResponse.json({ error: "Server Configuration Error" }, { status: 500 });
         }
 
-        // 2️⃣ Send Message
-        const telegramUrl = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
-
-        const telegramRes = await fetch(telegramUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chat_id: telegramId,
-                text: message,
-                parse_mode: "HTML",
-            }),
-        });
+        const telegramRes = await fetch(
+            `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: telegramId, text: message, parse_mode: "HTML" }),
+            }
+        );
 
         if (!telegramRes.ok) {
-            const telegramError = await telegramRes.json();
-            console.error("❌ Telegram API Error:", telegramError);
-            // Don't fail the order, just log the error
+            const err = await telegramRes.json();
+            console.error("❌ Telegram API Error:", err);
         } else {
-            console.log("✅ Telegram Notification Sent Successfully!");
+            console.log("✅ Telegram Notification Sent (Arabic)");
         }
 
         return NextResponse.json({ success: true });

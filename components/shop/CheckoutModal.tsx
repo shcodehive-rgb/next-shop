@@ -131,17 +131,18 @@ export default function CheckoutModal({ isOpen, onClose, product }: CheckoutModa
                         orderDetails: {
                             name: formData.name,
                             phone: formData.phone,
-                            total: total,
                             city: formData.city,
-                            items: orderData.items, // Pass the items string!
-                            client: { address: (formData as any).address }
+                            address: (formData as any).address || '',
+                            // Pass full title objects — server extracts Arabic
+                            items: items.map(i => ({ title: i.title, qty: i.qty })),
+                            total: total,
+                            shippingCost: 0,
                         }
                     })
                 });
                 console.log("Telegram notification sent!");
             } catch (err) {
                 console.error("Failed to send Telegram notification", err);
-                // Don't block the user
             }
 
             // 3. Success UI

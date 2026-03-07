@@ -1,7 +1,7 @@
 "use client";
 
 import { useShop } from "@/context/ShopContext";
-import { ShoppingCart, Lock, Search, Menu, ChevronDown, X } from "lucide-react";
+import { ShoppingCart, Lock, Search, Menu, ChevronDown, X, Truck } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
@@ -22,6 +22,13 @@ export default function Navbar() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const t = useTranslations('Navbar');
     const locale = useLocale();
+
+    // Navigate to products page when search is submitted
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) return;
+        router.push(`/${locale}/products`);
+    };
 
     // Admin Login Removed for Storefront Public Access
 
@@ -70,7 +77,7 @@ export default function Navbar() {
 
                 {/* Center: Search Bar (Hidden on mobile) */}
                 <div className="hidden md:flex flex-1 max-w-md mx-8">
-                    <div className="relative w-full">
+                    <form onSubmit={handleSearch} className="relative w-full">
                         <input
                             type="text"
                             placeholder={t('search_placeholder')}
@@ -78,8 +85,10 @@ export default function Navbar() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-gray-50 border border-gray-200 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                         />
-                        <Search className="w-5 h-5 text-gray-400 absolute ltr:right-3 rtl:left-3 top-2.5" />
-                    </div>
+                        <button type="submit" className="absolute ltr:right-3 rtl:left-3 top-2.5 text-gray-400 hover:text-emerald-600 transition-colors" aria-label="Search">
+                            <Search className="w-5 h-5" />
+                        </button>
+                    </form>
                 </div>
 
                 {/* Center: Navigation Menu (Desktop) */}
@@ -131,6 +140,14 @@ export default function Navbar() {
                         className="text-gray-700 hover:text-emerald-600 font-medium transition-colors"
                     >
                         {locale === 'ar' ? 'المدونة' : 'Blog'}
+                    </Link>
+
+                    <Link
+                        href={`/${locale}/track-order`}
+                        className="flex items-center gap-1.5 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                    >
+                        <Truck className="w-4 h-4" />
+                        {locale === 'ar' ? 'تتبع الطلب' : 'Track Order'}
                     </Link>
                 </nav>
 
@@ -214,6 +231,14 @@ export default function Navbar() {
                         >
                             {locale === 'ar' ? 'المدونة' : 'Blog'}
                         </Link>
+
+                        <Link
+                            href={`/${locale}/track-order`}
+                            className="flex items-center gap-1.5 py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                        >
+                            <Truck className="w-4 h-4" />
+                            {locale === 'ar' ? 'تتبع الطلب' : 'Track Order'}
+                        </Link>
                     </nav>
                 </div>
             )}
@@ -221,14 +246,19 @@ export default function Navbar() {
             {/* Mobile Search Bar */}
             {isSearchOpen && (
                 <div className="md:hidden border-t border-gray-100 bg-gray-50 px-4 py-3">
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        placeholder={t('search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                    />
+                    <form onSubmit={(e) => { handleSearch(e); setIsSearchOpen(false); }} className="relative">
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            placeholder={t('search_placeholder')}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-white border border-gray-200 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        />
+                        <button type="submit" className="absolute right-3 top-2.5 text-gray-400 hover:text-emerald-600 transition-colors" aria-label="Search">
+                            <Search className="w-5 h-5" />
+                        </button>
+                    </form>
                 </div>
             )}
         </header>
