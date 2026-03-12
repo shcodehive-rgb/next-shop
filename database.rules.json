@@ -1,0 +1,16 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "orders": {
+      "$storeName": {
+        ".read": true,
+        ".write": true,
+        "$orderId": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    }
+  }
+}

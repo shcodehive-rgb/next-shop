@@ -96,15 +96,26 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                 imageUrl = await uploadReviewImage(imageFile, productId);
             }
 
-            await addDoc(collection(db, "reviews"), {
+            const newReviewData = {
                 productId,
                 reviewer: form.reviewer.trim(),
                 comment: form.comment.trim(),
                 imageUrl,                         // ← storage URL or ""
                 date: new Date().toISOString(),
-                status: "pending",
+                status: "approved",
                 createdAt: serverTimestamp(),
-            });
+            };
+
+            const addedDoc = await addDoc(collection(db, "reviews"), newReviewData);
+
+            // Instantly show the review in UI without requiring a reload
+            setReviews(prev => [{
+                id: addedDoc.id,
+                reviewer: newReviewData.reviewer,
+                comment: newReviewData.comment,
+                imageUrl: newReviewData.imageUrl,
+                date: newReviewData.date,
+            }, ...prev]);
 
             setSubmitted(true);
             setForm({ reviewer: "", comment: "" });
@@ -151,8 +162,8 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                             <CheckCircle className="w-12 h-12 text-emerald-500" />
                             <p className="font-bold text-gray-800 text-lg">
                                 {isAr
-                                    ? "شكراً! سيتم نشر رأيك بعد المراجعة."
-                                    : "Thank you! Your review will appear after approval."}
+                                    ? "شكراً! تمت إضافة رأيك بنجاح."
+                                    : "Thank you! Your review has been published."}
                             </p>
                         </div>
                     ) : (

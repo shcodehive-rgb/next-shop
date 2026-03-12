@@ -4,13 +4,12 @@ import { useState, useEffect } from "react";
 
 import { useShop, Product, Category, SiteSettings } from "@/context/ShopContext";
 import HeroBanner from "@/components/HeroBanner";
-import CategoryRail from "@/components/CategoryRail";
 import BestSellers from "@/components/BestSellers";
 import PromoBanner from "@/components/PromoBanner";
 import FeaturesBar from "@/components/FeaturesBar";
 import HomepageReviews from "@/components/HomepageReviews";
 import StoreReviews from "@/components/StoreReviews";
-import CategoryProducts from "@/components/shop/CategoryProducts";
+import ProductGrid from "@/components/ProductGrid";
 import MidPageSlider from "@/components/shop/MidPageSlider";
 import CategoryShowcase from "@/components/shop/CategoryShowcase";
 
@@ -77,39 +76,24 @@ export default function HomeClient({ initialProducts, initialCategories, initial
             {/* 1. TOP BANNER — always rendered so skeleton shows immediately */}
             <HeroBanner image={settings.heroImage || ''} />
 
-            {/* 2. CIRCULAR CATEGORIES */}
-            <div className="container mx-auto px-4 my-6">
-                <CategoryRail
-                    categories={categories}
-                />
-            </div>
+
 
             {/* 3. BEST SELLERS SLIDER (Only if exists) */}
             <BestSellers products={bestSellers} />
 
-            {/* 4. PRODUCTS BY CATEGORY */}
-
-
-            {categories.length === 0 ? (
+            {/* 4. ALL PRODUCTS */}
+            {products.length === 0 ? (
                 <div className="text-center py-20 px-4">
                     <div className="bg-emerald-50 rounded-3xl p-8 max-w-2xl mx-auto border border-emerald-100">
                         <h2 className="text-2xl font-black text-emerald-800 mb-2">Welcome to your new store! 🚀</h2>
-                        <p className="text-emerald-700 mb-6">You haven't added any categories or products yet.</p>
+                        <p className="text-emerald-700 mb-6">You haven't added any products yet.</p>
                         <a href="/admin" className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition">
                             Go to Admin Panel
                         </a>
                     </div>
                 </div>
             ) : (
-                categories.map(category => (
-                    <CategoryProducts
-                        key={category.id}
-                        categoryId={category.id}
-                        // Pass data down to avoid prop-drilling delay
-                        products={products}
-                        category={category}
-                    />
-                ))
+                <ProductGrid products={products} />
             )}
 
             {/* 5. MIDDLE PROMO BANNER */}

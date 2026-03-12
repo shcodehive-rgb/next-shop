@@ -66,8 +66,13 @@ export default function TrackOrderPage() {
         if (rtdbListenerRef.current) off(rtdbListenerRef.current);
 
         const safeStoreName = (settings.storeName || "Store").replace(/[.#$\/\[\]]/g, "_");
+        console.log("🔍 Debug - Store name:", settings.storeName, "Safe name:", safeStoreName);
+        console.log("🔍 Debug - Phone number:", trimmed);
+        
         const ordersRef = ref(rtdb, `orders/${safeStoreName}`);
         const q = query(ordersRef, orderByChild("client/phone"), equalTo(trimmed));
+        
+        console.log("🔍 Debug - Query path:", `orders/${safeStoreName}`);
 
         // Use onValue for real-time updates
         onValue(q, (snap) => {
@@ -87,7 +92,13 @@ export default function TrackOrderPage() {
             setOrder(allOrders[0]);
         }, (err) => {
             setLoading(false);
-            console.error("RTDB query error:", err);
+            console.error("🔥 RTDB query error:", err);
+            console.error("🔥 Error details:", {
+                code: err.code,
+                message: err.message,
+                path: `orders/${safeStoreName}`,
+                phone: trimmed
+            });
             setError(isAr ? "حدث خطأ. يرجى المحاولة مرة أخرى." : "An error occurred. Please try again.");
         });
 

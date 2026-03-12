@@ -12,6 +12,7 @@ import { translateText } from "@/lib/translateText";
 import { Video, ImagePlus, X } from "lucide-react";
 import { uploadImageToStorage, uploadVideoToStorage } from "@/lib/storage-utils";
 import { notifyMakeWebhook } from "@/lib/makeWebhook";
+import YouTubePlayer from "@/components/YouTubePlayer";
 
 export default function AdminProducts() {
     const { products, addProduct, updateProduct, deleteProduct, categories } = useShop();
@@ -112,24 +113,6 @@ export default function AdminProducts() {
             shipping_type: p.shipping_type || "standard"
         });
         window.scrollTo({ top: 0, behavior: "smooth" });
-    };
-
-    // Video Upload Handler
-    const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const toastId = toast.loading("Uploading video...");
-        try {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setFormData(prev => ({ ...prev, videoUrl: reader.result as string }));
-            };
-            reader.readAsDataURL(file);
-            toast.success("Video uploaded!", { id: toastId });
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to upload video", { id: toastId });
-        }
     };
 
     // Rich Images Upload Handler
@@ -420,27 +403,29 @@ export default function AdminProducts() {
                                     <ImagePlus className="w-5 h-5 text-purple-600" /> Rich Content (A+)
                                 </h3>
 
-                                {/* Video Upload */}
+                                {/* YouTube Video URL */}
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1">Product Video (MP4)</label>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1">Product Video (YouTube URL)</label>
                                     <div className="flex items-center gap-4">
                                         <div className="relative w-full">
                                             <input
-                                                type="file"
-                                                accept="video/mp4,video/webm"
-                                                onChange={handleVideoUpload}
+                                                type="url"
+                                                placeholder="https://www.youtube.com/watch?v=..."
+                                                value={formData.videoUrl}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, videoUrl: e.target.value }))}
                                                 className="w-full p-2 border rounded-lg"
                                             />
-                                            {loading && <div className="absolute right-3 top-3"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div>}
                                         </div>
                                         {formData.videoUrl && (
                                             <div className="text-green-600 text-xs font-bold flex items-center gap-1">
-                                                <Video className="w-4 h-4" /> Uploaded
+                                                <Video className="w-4 h-4" /> Added
                                             </div>
                                         )}
                                     </div>
                                     {formData.videoUrl && (
-                                        <video src={formData.videoUrl} controls className="mt-2 w-full max-h-40 bg-black rounded-lg" />
+                                        <div className="mt-2 w-full">
+                                            <YouTubePlayer videoUrl={formData.videoUrl} />
+                                        </div>
                                     )}
                                 </div>
 
