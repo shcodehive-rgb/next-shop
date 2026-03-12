@@ -94,7 +94,7 @@ export default function TrackOrderPage() {
             setLoading(false);
             console.error("🔥 RTDB query error:", err);
             console.error("🔥 Error details:", {
-                code: err.code,
+                code: (err as any).code,
                 message: err.message,
                 path: `orders/${safeStoreName}`,
                 phone: trimmed

@@ -666,8 +666,8 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                             <a
                                 href={`https://wa.me/212688771251?text=${encodeURIComponent(
                                     locale === 'ar' 
-                                        ? `مرحباً، أود طلب المنتج: ${getProductTitle(product, locale)} - الرابط: ${window.location.href}`
-                                        : `Hello, I would like to order: ${getProductTitle(product, locale)} - Link: ${window.location.href}`
+                                        ? `مرحباً، أود طلب المنتج: ${getProductTitle(product.title)} - الرابط: ${window.location.href}`
+                                        : `Hello, I would like to order: ${getProductTitle(product.title)} - Link: ${window.location.href}`
                                 )}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
