@@ -75,10 +75,6 @@ export default function ProductsPage() {
 
           {/* Products Grid */}
           <div className="w-full lg:w-3/4 flex-1">
-            {/* Mobile filter button row — ShopSidebar renders this via lg:hidden */}
-            <div className="lg:hidden w-full mb-6">
-              <ShopSidebar />
-            </div>
             <ProductGrid products={filteredProducts} searchQuery={searchQuery} />
           </div>
         </div>

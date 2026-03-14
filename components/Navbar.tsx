@@ -181,36 +181,49 @@ export default function Navbar() {
                     <nav className="container mx-auto px-6 py-8 space-y-6">
                         <Link
                             href="/"
-                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-bold tracking-wider text-sm uppercase transition-colors border-b border-gray-50"
                         >
                             {locale === 'ar' ? 'الرئيسية' : 'HOME'}
+                        </Link>
+
+                        <Link
+                            href={`/${locale}/collections/all`}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-bold tracking-wider text-sm uppercase transition-colors border-b border-gray-50"
+                        >
+                            {locale === 'ar' ? 'جميع المنتجات' : 'TOUS LES PRODUITS'}
                         </Link>
 
 
                         <Link
                             href={`/${locale}/collections/equipements`}
-                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-bold tracking-wider text-sm uppercase transition-colors border-b border-gray-50"
                         >
                             {locale === 'ar' ? 'معدات وإكسسوارات' : 'ÉQUIPEMENTS & ACCESSOIRES'}
                         </Link>
 
                         <Link
                             href={`/${locale}/collections/packs-offres`}
-                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-bold tracking-wider text-sm uppercase transition-colors border-b border-gray-50"
                         >
                             {locale === 'ar' ? 'باقات وعروض' : 'PACKS & OFFRES'}
                         </Link>
 
                         <Link
                             href={`/${locale}/collections/arts-martiaux`}
-                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-bold tracking-wider text-sm uppercase transition-colors border-b border-gray-50"
                         >
                             {locale === 'ar' ? 'فنون قتالية' : 'ARTS MARTIAUX'}
                         </Link>
 
                         <Link
                             href={`/${locale}/track-order`}
-                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-bold tracking-wider text-sm uppercase transition-colors"
                         >
                             <Truck className="w-4 h-4 inline-block mr-2" />
                             {locale === 'ar' ? 'تتبع الطلب' : 'TRACK ORDER'}

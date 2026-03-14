@@ -56,9 +56,6 @@ export default function ShopPage() {
           {/* Products Grid — full width mobile */}
           <div className="w-full lg:w-3/4 flex-1">
             {/* Mobile Filter Button (Embedded in ShopSidebar) */}
-            <div className="lg:hidden w-full mb-6">
-              <ShopSidebar />
-            </div>
             <ProductGrid products={filteredProducts} searchQuery={searchQuery} />
           </div>
         </div>

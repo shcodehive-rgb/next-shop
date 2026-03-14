@@ -59,10 +59,6 @@ export default function CollectionsPage() {
 
           {/* Products Grid — maximized space, 100% width on mobile */}
           <div className="w-full lg:w-3/4 flex-1">
-            {/* Mobile Filter Button (Embedded in ShopSidebar as accordion) */}
-            <div className="lg:hidden w-full mb-6">
-              <ShopSidebar />
-            </div>
             <ProductGrid products={categoryFilteredProducts} searchQuery={searchQuery} />
           </div>
         </div>

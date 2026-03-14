@@ -161,41 +161,6 @@ export default function CollectionsSlugPage() {
                     {/* Right Side - Product Grid - Spans 100% on tablet/mobile */}
                     <div className="w-full lg:w-3/4 flex-1">
 
-                        {/* Mobile Filter Toggle - Visible on everything < LG */}
-                        <div className="lg:hidden w-full mb-6">
-                            <button
-                                onClick={() => setShowMobileFilters(!showMobileFilters)}
-                                className="flex lg:!hidden w-full items-center justify-between border border-gray-300 p-3 bg-white font-bold rounded-lg shadow-sm"
-                            >
-                                <span>{isAr ? 'تصفية حسب الفئة' : 'Catégories'}</span>
-                                <span className={`transition-transform duration-300 ${showMobileFilters ? 'rotate-180' : ''}`}>▼</span>
-                            </button>
-
-                            <div className={`overflow-hidden transition-all duration-300 ${showMobileFilters ? 'max-h-[500px] mt-2 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                <div className="bg-white rounded-xl border border-gray-100 p-4 space-y-2 shadow-sm">
-                                    <button
-                                        onClick={() => router.push(`/${locale}/collections/all`)}
-                                        className="w-full text-left px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-gray-50 font-bold"
-                                    >
-                                        {isAr ? 'جميع المنتجات' : 'Tous les produits'}
-                                    </button>
-                                    {[
-                                        { id: 'equipements', en: 'Équipements & Accessoires', ar: 'معدات وإكسسوارات' },
-                                        { id: 'packs-offres', en: 'Packs & Offres', ar: 'باقات وعروض' },
-                                        { id: 'arts-martiaux', en: 'Arts Martiaux', ar: 'فنون قتالية' }
-                                    ].map(cat => (
-                                        <button
-                                            key={cat.id}
-                                            onClick={() => navigateTo(cat.id)}
-                                            className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${slug === cat.id ? 'bg-emerald-600 text-white font-bold' : 'text-gray-700 hover:bg-gray-50'}`}
-                                        >
-                                            {isAr ? cat.ar : cat.en}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
                         {/* Results Count */}
                         <div className="flex justify-between items-center mb-6">
                             <p className="text-gray-600">
