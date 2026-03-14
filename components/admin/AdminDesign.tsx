@@ -1,9 +1,33 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useShop } from "@/context/ShopContext";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { convertImageToBase64, validateBase64Size } from "@/lib/base64-utils";
+
+// Helper component for smooth typing in admin panel
+function AdminInput({ value, onChange, className, placeholder, maxLength, type = "text" }: any) {
+    const [localValue, setLocalValue] = useState(value || "");
+
+    useEffect(() => {
+        setLocalValue(value || "");
+    }, [value]);
+
+    return (
+        <input
+            type={type}
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={() => {
+                if (localValue !== value) onChange(localValue);
+            }}
+            className={className}
+            placeholder={placeholder}
+            maxLength={maxLength}
+        />
+    );
+}
 
 export default function AdminDesign() {
     const { settings, updateSettings } = useShop();
@@ -31,12 +55,12 @@ export default function AdminDesign() {
                                     try {
                                         const file = e.target.files[0];
                                         const base64 = await convertImageToBase64(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
-                                        
+
                                         // Validate size before saving
                                         if (!validateBase64Size(base64)) {
                                             throw new Error('Image is too large even after compression');
                                         }
-                                        
+
                                         await updateSettings({ heroImage: base64 });
                                         toast.success(t('banner_updated'), { id: toastId });
                                     } catch (err) {
@@ -71,12 +95,12 @@ export default function AdminDesign() {
                                     try {
                                         const file = e.target.files[0];
                                         const base64 = await convertImageToBase64(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1920 });
-                                        
+
                                         // Validate size before saving
                                         if (!validateBase64Size(base64)) {
                                             throw new Error('Image is too large even after compression');
                                         }
-                                        
+
                                         await updateSettings({ middleBanner: base64 });
                                         toast.success(t('banner_updated'), { id: toastId });
                                     } catch (err) {
@@ -94,9 +118,9 @@ export default function AdminDesign() {
                             </div>
                         )}
                         <div className="mt-2">
-                            <input
+                            <AdminInput
                                 value={settings.middleBannerLink || ""}
-                                onChange={(e) => updateSettings({ middleBannerLink: e.target.value })}
+                                onChange={(val: string) => updateSettings({ middleBannerLink: val })}
                                 className="w-full p-3 bg-gray-50 border rounded-xl font-mono text-sm"
                                 placeholder={t('banner_link_placeholder')}
                             />
@@ -105,7 +129,80 @@ export default function AdminDesign() {
 
                     <hr className="border-gray-100" />
 
-                    {/* Features Toggle */}
+                    {/* 3-Column Category Banners */}
+                    <div>
+                        <h4 className="font-bold text-gray-700 mb-4 flex items-center gap-2">🏪 3-Column Category Grid</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {[1, 2, 3].map((num) => {
+                                const imageKey = `categoryBanner${num}Image` as any;
+                                const labelKey = `categoryBanner${num}Label` as any;
+                                const linkKey = `categoryBanner${num}Link` as any;
+
+                                return (
+                                    <div key={num} className="border rounded-xl p-4 bg-gradient-to-br from-blue-50 to-purple-50 space-y-3">
+                                        <p className="font-bold text-gray-700">Banner {num}</p>
+
+                                        {/* Image Upload */}
+                                        <div>
+                                            <label className="text-xs font-semibold text-gray-500 block mb-1">Image</label>
+                                            <input
+                                                type="file" accept="image/*"
+                                                onChange={async (e) => {
+                                                    if (e.target.files?.[0]) {
+                                                        const toastId = toast.loading('Processing...');
+                                                        try {
+                                                            const file = e.target.files[0];
+                                                            const base64 = await convertImageToBase64(file, { maxSizeMB: 0.4, maxWidthOrHeight: 800 });
+                                                            if (!validateBase64Size(base64)) {
+                                                                throw new Error('Image too large');
+                                                            }
+                                                            await updateSettings({ [imageKey]: base64 });
+                                                            toast.success('Image uploaded', { id: toastId });
+                                                        } catch (err) {
+                                                            console.error(err);
+                                                            toast.error('Error', { id: toastId });
+                                                        }
+                                                    }
+                                                }}
+                                                className="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700"
+                                            />
+                                            {(settings as any)[imageKey] && (
+                                                <div className="mt-2 w-full h-24 rounded-lg overflow-hidden border shadow-sm relative group">
+                                                    <img src={(settings as any)[imageKey]} className="w-full h-full object-cover" />
+                                                    <button onClick={() => updateSettings({ [imageKey]: "" })} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition">✖</button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Label/Button Text */}
+                                        <div>
+                                            <label className="text-xs font-semibold text-gray-500 block mb-1">Button Text (e.g., SHOP MEN)</label>
+                                            <AdminInput
+                                                value={(settings as any)[labelKey] || ""}
+                                                onChange={(val: string) => updateSettings({ [labelKey]: val })}
+                                                className="w-full p-2 bg-white border rounded-lg text-sm font-bold"
+                                                placeholder="SHOP WOMEN"
+                                                maxLength={30}
+                                            />
+                                        </div>
+
+                                        {/* Target URL */}
+                                        <div>
+                                            <label className="text-xs font-semibold text-gray-50 block mb-1">Target URL</label>
+                                            <AdminInput
+                                                value={(settings as any)[linkKey] || ""}
+                                                onChange={(val: string) => updateSettings({ [linkKey]: val })}
+                                                className="w-full p-2 bg-white border rounded-lg text-xs font-mono"
+                                                placeholder="/shop?category=women"
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <hr className="border-gray-100" />
                     <div>
                         <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 border">
                             <span className="font-bold text-gray-700">{t('show_features')}</span>
@@ -129,9 +226,9 @@ export default function AdminDesign() {
                                 className="h-14 w-20 p-1 bg-white border rounded-xl cursor-pointer"
                             />
                             <div className="flex-1">
-                                <input
+                                <AdminInput
                                     value={settings.primaryColor || "#10b981"}
-                                    onChange={(e) => updateSettings({ primaryColor: e.target.value })}
+                                    onChange={(val: string) => updateSettings({ primaryColor: val })}
                                     className="w-full p-3 bg-gray-50 border rounded-xl font-mono uppercase font-bold"
                                 />
                                 <p className="text-xs text-gray-400 mt-1">{t('primary_color_hint')}</p>
@@ -147,3 +244,4 @@ export default function AdminDesign() {
         </div>
     );
 }
+

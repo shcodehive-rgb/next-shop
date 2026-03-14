@@ -6,7 +6,7 @@ import {
     ArrowLeft, Star, Truck, ShieldCheck, FileText, Package,
     ChevronDown, X, Clock, CheckCircle, XCircle, RefreshCw
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CheckoutForm from "@/components/shop/CheckoutForm";
@@ -20,18 +20,21 @@ import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import { rtdb } from "@/lib/firebase";
 import { ref as dbRef, onValue, off } from "firebase/database";
+import ProductActions from "./ProductActions";
 
 interface ProductClientProps {
-    initialProduct: any;
+    product: any;
 }
 
 // ─── Mobile Accordion ────────────────────────────────────────────────────────
 function Accordion({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
     const [open, setOpen] = useState(false);
+    const handleToggle = useCallback(() => setOpen(!open), []);
+
     return (
         <div className="border border-gray-200 rounded-xl overflow-hidden">
             <button
-                onClick={() => setOpen(!open)}
+                onClick={handleToggle}
                 className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition"
             >
                 <span className="flex items-center gap-2 font-bold text-gray-800 text-sm">
@@ -122,7 +125,7 @@ function OrderTrackingStepper({
                 </div>
             ) : cancelled ? (
                 /* Cancelled */
-                <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-2xl p-4 text-red-600">
+                <div className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-2xl p-4 text-gray-600">
                     <XCircle className="w-8 h-8 shrink-0" />
                     <p className="font-bold text-sm">
                         {isAr ? "تم إلغاء هذه الطلبية. للاستفسار تواصل معنا." : "This order has been cancelled. Please contact us."}
@@ -197,22 +200,37 @@ function RelatedCard({ product, locale }: { product: any; locale: string }) {
     return (
         <Link
             href={`/${locale}/product/${product.id}`}
-            className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300"
+            className="group block relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 w-full overflow-hidden"
         >
-            <div className="relative aspect-square bg-gray-50 overflow-hidden">
+            {/* IMAGE */}
+            <div className="relative aspect-square w-full bg-gray-50 rounded-t-xl border-b border-gray-50 select-none">
                 <Image
                     src={img}
                     alt={title}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="object-contain transition-transform duration-500 group-hover:scale-110 select-none"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                    priority={true}
+                    loading="eager"
                     unoptimized={!isRemote(img)}
+                    onContextMenu={(e) => e.preventDefault()}
+                    draggable={false}
                 />
-                {product.discountLabel && (
-                    <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+            </div>
+
+            {/* Subtle Watermark */}
+            <div className="absolute bottom-2 right-2 text-white opacity-30 pointer-events-none select-none font-bold text-[10px]">
+                Luxe Store
+            </div>
+
+            {/* Discount Badge (manual label) */}
+            {product.discountLabel && (
+                <div className="absolute top-2 left-2 z-10">
+                    <span className="bg-emerald-600 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-md shadow-sm animate-pulse">
                         {product.discountLabel}
                     </span>
-                )}
-            </div>
+                </div>
+            )}
             <div className="p-3">
                 <p className="font-bold text-gray-800 text-sm line-clamp-2 mb-1 font-tajawal">{title}</p>
                 <span className="text-emerald-600 font-black text-base">{product.price} <span className="text-xs font-bold text-gray-400">DH</span></span>
@@ -222,14 +240,14 @@ function RelatedCard({ product, locale }: { product: any; locale: string }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function ProductClient({ initialProduct }: ProductClientProps) {
+export default function ProductClient({ product }: ProductClientProps) {
     const { products, addToCart, openCart, cart, settings } = useShop();
     const t = useTranslations('Product');
     const tCommon = useTranslations('Common');
     const locale = useLocale();
     const router = useRouter();
 
-    const product = initialProduct;
+    // const product = initialProduct; // Removed shadowing
 
     const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
     const [quantity, setQuantity] = useState<number>(1);
@@ -250,7 +268,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
         } catch (_) { /* ignore */ }
     }, [product?.id]);
 
-    const dismissStepper = () => {
+    const handleDismiss = useCallback(() => {
         setActiveOrder(null);
         // Optionally remove only this product's order from localStorage
         try {
@@ -258,7 +276,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
             const updated = stored.filter(o => !(Array.isArray(o.productIds) && o.productIds.includes(product.id)));
             localStorage.setItem("activeOrders", JSON.stringify(updated));
         } catch (_) { /* ignore */ }
-    };
+    }, [product?.id]);
 
     useEffect(() => {
         if (selectedBundleIndex !== null && product?.bundles?.[selectedBundleIndex]) {
@@ -266,17 +284,10 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
         }
     }, [selectedBundleIndex, product]);
 
-    // Track product view
-    useEffect(() => {
-        if (product?.id) {
-            addToRecentlyViewed({
-                id: product.id,
-                title: product.title,
-                price: product.price,
-                image: product.images?.[0] || product.image
-            });
-        }
-    }, [product]);
+    const handleContextMenu = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+    }, []);
+
 
     useEffect(() => {
         if (selectedBundleIndex !== null && product?.bundles?.[selectedBundleIndex]) {
@@ -290,7 +301,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
     let displayTitle = "Product";
     if (product?.title) {
         displayTitle = typeof product.title === 'object'
-            ? (product.title as any)[locale] || (product.title as any)['ar'] || (product.title as any)['en'] || "Product"
+            ? (product.title as any)[locale] || (product.title as any)['en'] || (product.title as any)['fr'] || String(product.title)
             : String(product.title);
     }
 
@@ -336,7 +347,19 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
         return Number(product.price);
     };
 
-    const handleAddToCart = (openDrawer = true) => {
+    const handleVariantSelect = useCallback((v: string) => {
+        setSelectedVariant(v);
+    }, []);
+
+    const handleBundleSelect = useCallback((idx: number) => {
+        setSelectedBundleIndex(idx);
+    }, []);
+
+    const handleQuantityChange = useCallback((newQty: number) => {
+        setQuantity(newQty);
+    }, []);
+
+    const handleAddToCart = useCallback((openDrawer = true) => {
         if (product.variants?.length > 0 && !selectedVariant) {
             alert(locale === 'ar' ? 'المرجو اختيار المقاس' : 'Please select a variant');
             return;
@@ -344,7 +367,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
         const effectivePrice = getActivePrice();
         addToCart(product, selectedVariant || undefined, quantity);
         if (openDrawer) openCart();
-    };
+    }, [product, selectedVariant, quantity, locale, openCart]);
 
     // Related products logic:
     // - For cheap products (< 99 DH): show other cheap products from same category (cross-sell to hit 149 DH MOV)
@@ -393,12 +416,8 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                 sizes="(max-width: 768px) 100vw, 50vw"
                                 priority
                                 unoptimized={!isRemote(images[selectedImage])}
-                                onContextMenu={(e) => e.preventDefault()}
+                                onContextMenu={handleContextMenu}
                                 draggable={false}
-                                onClick={() => {
-                                    setLightboxImage(images[selectedImage]);
-                                    setLightboxOpen(true);
-                                }}
                             />
 
                             {/* Watermark Overlay */}
@@ -407,28 +426,34 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                             </div>
 
                             {showDiscount && (
-                                <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold z-10 shadow-md">
+                                <div className="absolute top-4 left-4 bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold z-10 shadow-md">
                                     {product.discountLabel}
                                 </div>
                             )}
                         </div>
 
-                        {/* Thumbnails */}
+                        {/* Vertical Image Gallery - All 10 images stacked */}
                         {images.length > 1 && (
-                            <div className="flex gap-2 overflow-x-auto pb-2">
+                            <div className="space-y-4 mt-8">
                                 {images.map((img: string, idx: number) => (
-                                    <button key={idx} onClick={() => setSelectedImage(idx)}
-                                        className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition select-none ${selectedImage === idx ? 'border-emerald-600' : 'border-gray-200'}`}>
+                                    <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200 transition-all cursor-pointer">
                                         <Image
                                             src={img}
-                                            alt=""
+                                            alt={`${displayTitle} - Image ${idx + 1}`}
                                             fill
-                                            className="object-cover select-none"
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                                            priority={idx === 0}
                                             unoptimized={!isRemote(img)}
-                                            onContextMenu={(e) => e.preventDefault()}
+                                            onContextMenu={handleContextMenu}
                                             draggable={false}
                                         />
-                                    </button>
+                                        {idx === 0 && (
+                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                                <div className="text-white text-xs font-bold px-2 py-1 rounded">VIEW</div>
+                                            </div>
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -467,7 +492,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                 )}
                             </div>
                             {product.stock && product.stock < 10 && (
-                                <div className="inline-block bg-red-50 text-red-600 px-3 py-1 rounded-lg text-sm font-bold animate-pulse mb-2 border border-red-100">
+                                <div className="inline-block bg-amber-50 text-amber-600 px-3 py-1 rounded-lg text-sm font-bold animate-pulse mb-2 border border-amber-100">
                                     🔥 {locale === 'ar' ? `سارع بالطلب! تبقى ${product.stock} فقط` : `Hurry! Only ${product.stock} left`}
                                 </div>
                             )}
@@ -547,7 +572,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                             </div>
                                         </div>
                                         {bundle.badgeText && (
-                                            <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg shadow-sm">
+                                            <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg shadow-sm">
                                                 {bundle.badgeText}
                                             </div>
                                         )}
@@ -576,7 +601,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                 orderId={activeOrder.orderId}
                                 storeName={activeOrder.storeName}
                                 locale={locale}
-                                onDismiss={dismissStepper}
+                                onDismiss={handleDismiss}
                             />
                         ) : (
                             <div id="checkout-form-section" className="mt-6 border-t pt-6 animate-in slide-in-from-bottom-4 duration-700">
@@ -610,7 +635,7 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                 icon={<FileText className="w-4 h-4 text-emerald-600" />}
                             >
                                 <div className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">
-                                    {displayDescription}
+                                    {typeof displayDescription === 'string' ? displayDescription : JSON.stringify(displayDescription)}
                                 </div>
                             </Accordion>
 
@@ -660,40 +685,40 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                                         : 'Cash on delivery. Delivery time is between 24 and 72 hours to all cities in Morocco.'}
                                 </div>
                             </Accordion>
-                        
-                        {/* WhatsApp Order Button */}
-                        <div className="mt-6">
-                            <a
-                                href={`https://wa.me/212688771251?text=${encodeURIComponent(
-                                    locale === 'ar' 
-                                        ? `مرحباً، أود طلب المنتج: ${getProductTitle(product.title)} - الرابط: ${window.location.href}`
-                                        : `Hello, I would like to order: ${getProductTitle(product.title)} - Link: ${window.location.href}`
-                                )}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-3 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                            >
-                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.149-.67.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.123-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.885-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                                </svg>
-                                {locale === 'ar' ? 'اطلب عبر الواتساب' : 'Commander par WhatsApp'}
-                            </a>
-                            <p className="text-center text-xs text-gray-500 mt-2">
-                                {locale === 'ar' ? 'احصل على مساعدة سريعة وتأكيد الطلب عبر الواتساب' : 'Obtenez une aide rapide et confirmez votre commande via WhatsApp'}
-                            </p>
+
+                            {/* WhatsApp Order Button */}
+                            <div className="mt-6">
+                                <a
+                                    href={`https://wa.me/212688771251?text=${encodeURIComponent(
+                                        locale === 'ar'
+                                            ? `مرحباً، أود طلب المنتج: ${getProductTitle(product.title)} - الرابط: ${window.location.href}`
+                                            : `Hello, I would like to order: ${getProductTitle(product.title)} - Link: ${window.location.href}`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-3 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                >
+                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.149-.67.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.123-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.885-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                                    </svg>
+                                    {locale === 'ar' ? 'اطلب عبر الواتساب' : 'Commander par WhatsApp'}
+                                </a>
+                                <p className="text-center text-xs text-gray-500 mt-2">
+                                    {locale === 'ar' ? 'احصل على مساعدة سريعة وتأكيد الطلب عبر الواتساب' : 'Obtenez une aide rapide et confirmez votre commande via WhatsApp'}
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Product Demonstration Video */}
-                {product.videoUrl && (
-                    <section className="mt-8 sm:mt-12 px-4 sm:px-0">
-                        <div className="max-w-4xl mx-auto">
-                            <YouTubePlayer videoUrl={product.videoUrl} />
-                        </div>
-                    </section>
-                )}
-                
+                    {/* Product Demonstration Video */}
+                    {product.videoUrl && (
+                        <section className="mt-8 sm:mt-12 px-4 sm:px-0">
+                            <div className="max-w-4xl mx-auto">
+                                <YouTubePlayer videoUrl={product.videoUrl} />
+                            </div>
+                        </section>
+                    )}
+
                 </div>
 
                 {/* Customer Photo Reviews */}
@@ -754,56 +779,27 @@ export default function ProductClient({ initialProduct }: ProductClientProps) {
                             const remaining = 149 - newCartTotal;
                             Swal.fire({
                                 icon: 'info',
-                                title: locale === 'ar' ? 'خطوة بسيطة لتأكيد طلبك!' : 'A simple step to confirm your order!',
+                                title: locale === 'ar' ? 'أضف المزيد' : 'Add more',
                                 html: `
-                                    <div style="text-align: ${locale === 'ar' ? 'right' : 'left'}; direction: ${locale === 'ar' ? 'rtl' : 'ltr'};">
-                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-                                            <span style="font-size: 24px;">🎁</span>
-                                            <span style="color: #10b981; font-weight: bold; font-size: 16px;">
-                                                ${locale === 'ar' ? 'لضمان أفضل خدمة، المنتجات التي يقل سعرها عن 149 درهم تُباع كإضافة لطلبات أخرى.' : 'For the best service, products under 149 DH are sold as add-ons to other orders.'}
-                                            </span>
-                                        </div>
-                                        <div style="margin-bottom: 16px; line-height: 1.5;">
-                                            <span style="color: #374151;">
-                                                ${locale === 'ar'
-                                        ? `أضف المزيد من المنتجات بقيمة <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
-                                        : `Add more products worth <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
-                                    }
-                                            </span>
+                                    <div style="direction: ${locale === 'ar' ? 'rtl' : 'ltr'}; text-align: center;">
+                                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px; margin-top: 12px;">
+                                            <p style="font-size: 14px; color: #065f46; font-weight: bold; margin-bottom: 4px;">
+                                                ${locale === 'ar' ? 'أضف منتجات بقيمة' : 'Add'} <span style="font-size: 18px;">${remaining} DH</span> ${locale === 'ar' ? 'أكثر للاستفادة من التوصيل' : 'more to complete your order'}
+                                            </p>
                                         </div>
                                     </div>
                                 `,
-                                showCancelButton: true,
-                                showConfirmButton: true,
-                                confirmButtonText: locale === 'ar' ? 'إضافة للسلة ومتابعة التسوق' : 'Add to cart & Continue Shopping',
-                                cancelButtonText: locale === 'ar' ? 'أضف للسلة' : 'View Cart',
+                                confirmButtonText: locale === 'ar' ? 'أكمل التسوق' : 'Continue Shopping',
                                 confirmButtonColor: '#10b981',
-                                cancelButtonColor: '#6b7280',
-                                reverseButtons: locale === 'ar'
-                            }).then((result: any) => {
-                                if (result.isConfirmed) {
-                                    // Continue shopping - close modal and stay on page
-                                    // Modal already closed by Swal
-                                } else {
-                                    // Add to cart and go to cart - use exact same logic as main button
-                                    if (product.variants?.length > 0 && !selectedVariant) {
-                                        alert(locale === 'ar' ? 'المرجو اختيار المقاس' : 'Please select a variant');
-                                        return;
-                                    }
-                                    const effectivePrice = getActivePrice();
-                                    addToCart(product, selectedVariant || undefined, quantity);
-                                    openCart();
-                                }
                             });
                         } else {
-                            // MOV met, add to cart and go to cart for checkout
-                            addToCart(product, selectedVariant || undefined, quantity);
-                            router.push(`/${locale}/products`);
+                            handleAddToCart(true);
                         }
                     }}
-                    className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition"
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
-                    {locale === 'ar' ? 'أكد الطلب' : 'Confirm Order'}
+                    <Package className="w-5 h-5" />
+                    {locale === 'ar' ? 'اطلب الآن' : 'Order Now'}
                 </button>
             </div>
 

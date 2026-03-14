@@ -5,6 +5,7 @@ import { MoveRight, MoveLeft } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useShop, Product, Category } from "@/context/ShopContext";
 import ProductCard from "@/components/shop/ProductCard";
+import { toast } from "sonner";
 
 interface Props {
     products: Product[];
@@ -19,6 +20,7 @@ function getCatName(name: any, locale: string): string {
 export default function CategoryShowcase({ products, categories }: Props) {
     const locale = useLocale();
     const isRTL = locale === "ar";
+    const { addToCart, openCart } = useShop();
 
     return (
         <div className="space-y-16">
@@ -71,7 +73,7 @@ export default function CategoryShowcase({ products, categories }: Props) {
 
                                 {/* Elegant View More */}
                                 <Link
-                                    href={`/${locale}/collection/${category.id}`}
+                                    href={`/${locale}/shop?category=${category.id}`}
                                     className="group inline-flex items-center gap-2 text-sm font-light tracking-widest text-emerald-700 uppercase border-b border-emerald-300 pb-0.5 hover:border-emerald-600 hover:text-emerald-800 transition-all duration-300"
                                 >
                                     <span>{isRTL ? "رؤية المزيد" : "View More"}</span>
@@ -89,16 +91,15 @@ export default function CategoryShowcase({ products, categories }: Props) {
                                     <ProductCard
                                         key={product.id}
                                         product={product}
-                                        priority={index < 2}
                                     />
                                 ))}
                             </div>
 
                             {/* ── Centered View More (below grid, full button) ── */}
-                            <div className="flex justify-center mt-8">
+                            <div className="flex justify-center mt-12">
                                 <Link
-                                    href={`/${locale}/collection/${category.id}`}
-                                    className="group inline-flex items-center gap-3 px-10 py-3 rounded-full border border-emerald-400 text-emerald-700 font-light tracking-widest text-sm uppercase hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-500 hover:shadow-lg hover:shadow-emerald-100 hover:-translate-y-0.5 active:scale-95"
+                                    href={`/${locale}/collections/all`}
+                                    className="group inline-flex items-center gap-3 px-12 py-4 border border-black text-black font-light tracking-widest text-sm uppercase rounded-none hover:bg-black hover:text-white transition-all duration-500 hover:shadow-xl active:scale-95"
                                 >
                                     <span>{isRTL ? "رؤية المزيد" : "View More"}</span>
                                     {isRTL ? (

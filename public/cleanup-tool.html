@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Cleanup Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .btn { padding: 10px 20px; margin: 10px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .section { margin: 20px 0; padding: 15px; border-radius: 8px; }
+        .protected { background: #fef2f2; border: 1px solid #fecaca; }
+        .keep { background: #f0fdf4; border: 1px solid #bbf7d0; }
+        .delete { background: #fefce8; border: 1px solid #fef3c7; }
+        .product { padding: 8px; margin: 5px 0; border-radius: 4px; background: white; }
+        .loading { text-align: center; padding: 20px; }
+        .error { background: #fef2f2; color: #dc2626; padding: 10px; border-radius: 4px; }
+        .success { background: #f0fdf4; color: #16a34a; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏋️ Product Cleanup Tool</h1>
+        <p><strong>⚠️ CRITICAL:</strong> This tool will delete all non-fitness products. Protected products (Facebook Ads) will NOT be deleted.</p>
+        
+        <div class="buttons">
+            <button class="btn btn-primary" onclick="previewCleanup()">📋 Preview Cleanup</button>
+            <button class="btn btn-danger" onclick="executeCleanup()">🗑️ Execute Cleanup</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function previewCleanup() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="loading">🔄 Analyzing products...</div>';
+            
+            try {
+                const response = await fetch('/api/cleanup-products');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data, true);
+                } else {
+                    results.innerHTML = `<div class="error">❌ Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function executeCleanup() {
+            if (!confirm('⚠️ Are you sure you want to DELETE all non-fitness products? This action cannot be undone!')) {
+                return;
+            }
+            
+            if (!confirm('🚨 FINAL WARNING: This will permanently delete products. Continue?')) {
+                return;
+            }
+            
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="loading">🗑️ Deleting products...</div>';
+            
+            try {
+                const response = await fetch('/api/cleanup-products', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer admin-cleanup-2024',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data, false);
+                } else {
+                    results.innerHTML = `<div class="error">❌ Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function displayResults(data, isPreview) {
+            const results = document.getElementById('results');
+            
+            let html = `
+                <div class="success">
+                    ✅ Analysis Complete!
+                    <br><strong>Total Products:</strong> ${data.summary.totalProducts}
+                    <br><strong>Protected:</strong> ${data.summary.protectedFound}
+                    <br><strong>Keep:</strong> ${data.summary.productsToKeep}
+                    <br><strong>Delete:</strong> ${data.summary.productsToDelete}
+                    ${!isPreview ? `<br><strong>Deleted Successfully:</strong> ${data.summary.deletedSuccessfully}` : ''}
+                </div>
+            `;
+
+            // Protected Products
+            if (data.details.protectedFound.length > 0) {
+                html += '<div class="section protected"><h3>🛡️ PROTECTED PRODUCTS (Will NOT be deleted)</h3>';
+                data.details.protectedFound.forEach(product => {
+                    html += `<div class="product">🔒 ${product.title} - ${product.category}</div>`;
+                });
+                html += '</div>';
+            }
+
+            // Products to Keep
+            if (data.details.productsToKeep.length > 0) {
+                html += '<div class="section keep"><h3>✅ PRODUCTS TO KEEP (Fitness Related)</h3>';
+                data.details.productsToKeep.forEach(product => {
+                    html += `<div class="product">💪 ${product.title} - ${product.category}</div>`;
+                });
+                html += '</div>';
+            }
+
+            // Products to Delete
+            if (data.details.productsToDelete.length > 0) {
+                html += '<div class="section delete"><h3>🗑️ PRODUCTS TO DELETE (Non-Fitness)</h3>';
+                data.details.productsToDelete.forEach(product => {
+                    html += `<div class="product">❌ ${product.title} - ${product.category}</div>`;
+                });
+                html += '</div>';
+            }
+
+            // Deletion results (if executed)
+            if (!isPreview && data.details.productsDeleted) {
+                html += '<div class="section delete"><h3>📋 DELETION RESULTS</h3>';
+                data.details.productsDeleted.forEach(result => {
+                    const icon = result.status === 'deleted' ? '✅' : '❌';
+                    html += `<div class="product">${icon} ${result.title} - ${result.status}</div>`;
+                });
+                html += '</div>';
+            }
+
+            results.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

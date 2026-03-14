@@ -3,13 +3,47 @@
 import { useShop } from "@/context/ShopContext";
 import ProductGrid from "@/components/ProductGrid";
 import { useTranslations, useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import ShopSidebar from "@/components/shop/ShopSidebar";
+import { useEffect } from "react";
 
 export default function ProductsPage() {
-  const { filteredProducts, searchQuery } = useShop();
+  const { filteredProducts, searchQuery, setSelectedCategory, categories } = useShop();
   const locale = useLocale();
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category");
+
+  // Auto-select category from URL parameter
+  useEffect(() => {
+    if (categoryParam) {
+      // Find the category by ID or name
+      const foundCategory = categories.find(
+        (cat) =>
+          cat.id === categoryParam ||
+          (typeof cat.name === "string" && cat.name.toLowerCase() === categoryParam.toLowerCase()) ||
+          (typeof cat.name === "object" &&
+            (cat.name?.[locale]?.toLowerCase() === categoryParam.toLowerCase() ||
+              cat.name?.en?.toLowerCase() === categoryParam.toLowerCase() ||
+              cat.name?.ar?.toLowerCase() === categoryParam.toLowerCase()))
+      );
+
+      if (foundCategory) {
+        setSelectedCategory(foundCategory.id);
+      }
+    }
+  }, [categoryParam, categories, locale, setSelectedCategory]);
+
+  const pageTitle =
+    categoryParam && categories.find((c) => c.id === categoryParam)
+      ? typeof categories.find((c) => c.id === categoryParam)?.name === "string"
+        ? categories.find((c) => c.id === categoryParam)?.name
+        : (categories.find((c) => c.id === categoryParam)?.name as any)?.[locale] ||
+        (categories.find((c) => c.id === categoryParam)?.name as any)?.en
+      : locale === "ar"
+        ? "جميع المنتجات"
+        : "All Products";
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-tajawal">
@@ -24,7 +58,7 @@ export default function ProductsPage() {
             {locale === "ar" ? "العودة للمتجر" : "Back to Shop"}
           </Link>
           <h1 className="text-xl font-black text-gray-900">
-            {locale === "ar" ? "جميع المنتجات" : "All Products"}
+            {pageTitle}
           </h1>
           <span className="text-sm text-gray-400">
             {filteredProducts.length} {locale === "ar" ? "منتج" : "products"}
@@ -32,20 +66,19 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        {/* Mobile filter button row — ShopSidebar renders this via lg:hidden */}
-        <div className="lg:hidden mb-4">
-          <ShopSidebar />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="w-full px-2 md:px-4 py-6">
+        <div className="flex flex-col lg:flex-row gap-8 w-full">
           {/* Sidebar — desktop only */}
-          <div className="hidden lg:block lg:col-span-1">
+          <aside className="!hidden lg:!block w-full lg:w-1/4 shrink-0">
             <ShopSidebar />
-          </div>
+          </aside>
 
           {/* Products Grid */}
-          <div className="lg:col-span-3">
+          <div className="w-full lg:w-3/4 flex-1">
+            {/* Mobile filter button row — ShopSidebar renders this via lg:hidden */}
+            <div className="lg:hidden w-full mb-6">
+              <ShopSidebar />
+            </div>
             <ProductGrid products={filteredProducts} searchQuery={searchQuery} />
           </div>
         </div>

@@ -22,7 +22,7 @@ export default function Footer() {
                             {settings.storeName}
                         </Link>
                         <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto md:mx-0">
-                            {settings.storeName} - وجهتكم الأولى للتسوق الإلكتروني. نقدم لكم أفضل المنتجات بجودة عالية وخدمة توصيل سريعة.
+                            {settings.storeName} - {t('description')}
                         </p>
                         <div className="flex gap-4 justify-center md:justify-start pt-2">
                             <a href="https://www.facebook.com/profile.php?id=61579754581519" target="_blank" rel="noopener noreferrer" className="p-2.5 bg-gray-800 rounded-lg hover:bg-emerald-600 hover:text-white transition group">
@@ -37,26 +37,38 @@ export default function Footer() {
                     {/* COL 1: Quick Links */}
                     <div>
                         <h3 className="text-white font-bold text-lg mb-6 relative inline-block">
-                            روابط سريعة
+                            {t('quick_links')}
                             <span className="absolute -bottom-2 right-0 w-12 h-1 bg-emerald-500 rounded-full"></span>
                         </h3>
                         <ul className="space-y-3">
                             <li>
                                 <Link href="/" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
-                                    الصفحة الرئيسية
+                                    {t('home')}
                                 </Link>
                             </li>
                             <li>
-                                <Link href={`/${locale}/products`} className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                <Link href={`/${locale}/collections/equipements`} className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
-                                    المنتجات
+                                    {t('equipements')}
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/contact" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                <Link href={`/${locale}/collections/packs-offres`} className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
-                                    تواصل معنا
+                                    {t('packs')}
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href={`/${locale}/collections/arts-martiaux`} className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
+                                    {t('arts_martiaux')}
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href={`/${locale}/track-order`} className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
+                                    {t('track')}
                                 </Link>
                             </li>
                         </ul>
@@ -65,32 +77,32 @@ export default function Footer() {
                     {/* COL 2: Our Policies */}
                     <div>
                         <h3 className="text-white font-bold text-lg mb-6 relative inline-block">
-                            سياساتنا
+                            {t('policies')}
                             <span className="absolute -bottom-2 right-0 w-12 h-1 bg-emerald-500 rounded-full"></span>
                         </h3>
                         <ul className="space-y-3">
                             <li>
                                 <Link href="/policies/refund" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
-                                    سياسة الإرجاع والاستبدال
+                                    {t('refund_policy')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/policies/privacy" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
-                                    سياسة الخصوصية
+                                    {t('privacy_policy')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/policies/cod" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
-                                    سياسة الدفع عند الاستلام
+                                    {t('cod_policy')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/policies/shipping" className="hover:text-emerald-400 transition flex items-center justify-center md:justify-start gap-2 group">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition"></span>
-                                    سياسة الشحن والتوصيل
+                                    {t('shipping_policy')}
                                 </Link>
                             </li>
                         </ul>
@@ -99,7 +111,7 @@ export default function Footer() {
 
                 {/* Bottom Bar */}
                 <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-                    <p>© {new Date().getFullYear()} {settings.storeName}. جميع الحقوق محفوظة.</p>
+                    <p>© {new Date().getFullYear()} {settings.storeName}. {t('rights')}.</p>
 
                     <div className="flex items-center gap-1">
                         <span>Made with</span>

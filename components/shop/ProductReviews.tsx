@@ -4,15 +4,17 @@ import { useState, useEffect, useRef } from "react";
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
-import { Camera, MessageSquare, ChevronUp, Loader2, CheckCircle } from "lucide-react";
+import { Camera, MessageSquare, ChevronUp, Loader2, CheckCircle, Star } from "lucide-react";
 import { useLocale } from "next-intl";
 
 interface Review {
     id: string;
     reviewer: string;
     comment: string;
+    imageUrls?: string[];
     imageUrl?: string;
     date: string;
+    rating?: number;
 }
 
 interface ProductReviewsProps {
@@ -39,7 +41,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
     const [submitted, setSubmitted] = useState(false);
     const [lightbox, setLightbox] = useState<string | null>(null);
 
-    const [form, setForm] = useState({ reviewer: "", comment: "" });
+    const [form, setForm] = useState({ reviewer: "", comment: "", rating: 5 });
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState("");
     const fileRef = useRef<HTMLInputElement>(null);
@@ -55,7 +57,8 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                 );
                 const snap = await getDocs(q);
                 const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as Review));
-                data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                // Ensure sorting works even if dates are missing
+                data.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
                 setReviews(data);
             } catch (err) {
                 console.error("Error loading reviews:", err);
@@ -100,6 +103,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                 productId,
                 reviewer: form.reviewer.trim(),
                 comment: form.comment.trim(),
+                rating: form.rating,
                 imageUrl,                         // ← storage URL or ""
                 date: new Date().toISOString(),
                 status: "approved",
@@ -113,13 +117,20 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                 id: addedDoc.id,
                 reviewer: newReviewData.reviewer,
                 comment: newReviewData.comment,
+                rating: newReviewData.rating,
                 imageUrl: newReviewData.imageUrl,
                 date: newReviewData.date,
             }, ...prev]);
 
             setSubmitted(true);
-            setForm({ reviewer: "", comment: "" });
+            setForm({ reviewer: "", comment: "", rating: 5 });
             removeImage();
+
+            // Auto-close form after submission success
+            setTimeout(() => {
+                setFormOpen(false);
+                setSubmitted(false);
+            }, 3000);
         } catch (err) {
             console.error("Error submitting review:", err);
         } finally {
@@ -143,20 +154,29 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                     <MessageSquare className="w-5 h-5 text-emerald-600" />
                     {isAr ? `آراء العملاء (${reviews.length})` : `Customer Reviews (${reviews.length})`}
                 </h2>
-                <button
-                    onClick={() => { setFormOpen(f => !f); setSubmitted(false); }}
-                    className="flex items-center gap-1.5 text-sm font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-full transition"
-                >
-                    {formOpen
-                        ? <><ChevronUp className="w-4 h-4" />{isAr ? "إخفاء النموذج" : "Hide Form"}</>
-                        : <><MessageSquare className="w-4 h-4" />{isAr ? "أضف رأيك" : "Leave a Review"}</>
-                    }
-                </button>
             </div>
 
-            {/* Submit Form */}
+            {/* Toggle Button for Form */}
+            {!formOpen && !submitted && (
+                <button
+                    onClick={() => setFormOpen(true)}
+                    className="w-full md:w-auto border border-emerald-500 text-emerald-600 font-bold py-2 px-4 rounded mb-8"
+                >
+                    {isAr ? "إضافة تعليق (Write a Review)" : "Ajouter un avis (Write a Review)"}
+                </button>
+            )}
+
+            {/* Submit Form - Collapsible */}
             {formOpen && (
-                <div className="mb-8 bg-gray-50 border border-gray-200 rounded-2xl p-5 animate-in slide-in-from-top-2 duration-300">
+                <div className="mb-8 bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm animate-in slide-in-from-top duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">
+                            {isAr ? "أضف تقييمك" : "Write a Review"}
+                        </h3>
+                        <button onClick={() => setFormOpen(false)} className="text-gray-400 hover:text-gray-600">
+                            <ChevronUp className="w-5 h-5" />
+                        </button>
+                    </div>
                     {submitted ? (
                         <div className="flex flex-col items-center py-6 gap-3 text-center">
                             <CheckCircle className="w-12 h-12 text-emerald-500" />
@@ -168,6 +188,27 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Star Rating Selector */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-2">
+                                    {isAr ? "تقييمك" : "Rating"}
+                                </label>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3, 4, 5].map((num) => (
+                                        <button
+                                            key={num}
+                                            type="button"
+                                            onClick={() => setForm(p => ({ ...p, rating: num }))}
+                                            className="focus:outline-none transition-transform active:scale-90"
+                                        >
+                                            <Star
+                                                className={`w-8 h-8 ${num <= form.rating ? "fill-emerald-500 text-emerald-500" : "text-gray-300"}`}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1">
                                     {isAr ? "اسمك" : "Your Name"}
@@ -267,23 +308,36 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                     {reviews.map(review => (
                         <div
                             key={review.id}
-                            className="bg-white border border-gray-100 rounded-2xl p-4 flex gap-4 shadow-sm hover:shadow-md transition"
+                            className="bg-white border border-gray-100 rounded-3xl p-5 flex gap-4 shadow-sm hover:shadow-md transition"
                         >
-                            {review.imageUrl && (
-                                <button onClick={() => setLightbox(review.imageUrl!)} className="flex-shrink-0">
-                                    <img
-                                        src={review.imageUrl}
-                                        alt="Review photo"
-                                        className="w-20 h-20 rounded-xl object-cover border border-gray-200 hover:opacity-90 transition cursor-zoom-in"
-                                    />
-                                </button>
-                            )}
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center justify-between mb-2">
                                     <span className="font-bold text-gray-900 text-sm">{review.reviewer}</span>
-                                    <span className="text-xs text-gray-400">{formatDate(review.date)}</span>
+                                    <div className="flex text-emerald-500 gap-0.5">
+                                        {[...Array(5)].map((_, i) => (
+                                            <Star key={i} className={`w-3 h-3 ${i < (review.rating || 5) ? "fill-current" : "text-gray-200"}`} />
+                                        ))}
+                                    </div>
                                 </div>
-                                <p className="text-gray-600 text-sm leading-relaxed">{review.comment}</p>
+                                <p className="text-gray-600 text-sm leading-relaxed mb-4">{review.comment}</p>
+
+                                {/* Photo Gallery */}
+                                {(review.imageUrls || review.imageUrl) && (
+                                    <div className="flex gap-2">
+                                        {(review.imageUrls || [review.imageUrl]).filter((url): url is string => Boolean(url)).map((url: string, idx: number) => (
+                                            <button key={idx} onClick={() => setLightbox(url)} className="flex-shrink-0">
+                                                <img
+                                                    src={url}
+                                                    alt="Review photo"
+                                                    className="w-20 h-20 rounded-xl object-cover border border-gray-100 hover:opacity-90 transition cursor-zoom-in shadow-sm"
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="mt-3 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                    {formatDate(review.date)}
+                                </div>
                             </div>
                         </div>
                     ))}

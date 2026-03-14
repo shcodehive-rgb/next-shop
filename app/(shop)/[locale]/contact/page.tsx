@@ -7,8 +7,8 @@ export default function ContactPage() {
     // Hardcoded content as per user request, but structure ready for i18n if needed later.
     // User requested EXACT content, so we use that.
 
-    const phoneNumber = "+212 635-278125";
-    const cleanPhone = "212635278125";
+    const phoneNumber = "+212 688-771251";
+    const cleanPhone = "212688771251";
     const whatsappLink = `https://wa.me/${cleanPhone}`;
 
     return (

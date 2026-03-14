@@ -30,8 +30,6 @@ export default function Navbar() {
         router.push(`/${locale}/products`);
     };
 
-    // Admin Login Removed for Storefront Public Access
-
     // Auto focus when opening search
     useEffect(() => {
         if (isSearchOpen && inputRef.current) {
@@ -57,115 +55,77 @@ export default function Navbar() {
     }, [pathname]);
 
     return (
-        <header className="w-full bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
-            <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <header className="w-full bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
+            <div className="container mx-auto px-6 h-20 flex items-center justify-between">
 
-                {/* Left Side: Mobile Menu & Logo */}
-                <div className="flex items-center gap-4">
-                    {/* Mobile Menu Toggle */}
-                    <button
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="md:hidden p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
-                    >
-                        {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                    </button>
-
-                    <Link href="/" className="flex items-center gap-2 text-xl font-bold text-gray-800 tracking-tight">
-                        <span>Luxe Store</span>
-                    </Link>
-                </div>
-
-                {/* Center: Search Bar (Hidden on mobile) */}
-                <div className="hidden md:flex flex-1 max-w-md mx-8">
-                    <form onSubmit={handleSearch} className="relative w-full">
-                        <input
-                            type="text"
-                            placeholder={t('search_placeholder')}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                {/* Left Side: Logo */}
+                <Link href="/" className="flex items-center">
+                    <div className="relative w-16 h-10 flex items-center">
+                        <Image
+                            src="/logo.svg"
+                            alt="LUXEFIT"
+                            width={64}
+                            height={40}
+                            className="object-contain"
                         />
-                        <button type="submit" className="absolute ltr:right-3 rtl:left-3 top-2.5 text-gray-400 hover:text-emerald-600 transition-colors" aria-label="Search">
-                            <Search className="w-5 h-5" />
-                        </button>
-                    </form>
-                </div>
+                    </div>
+                </Link>
 
-                {/* Center: Navigation Menu (Desktop) */}
-                <nav className="hidden md:flex items-center gap-8">
+                {/* Center: Empty space for luxury aesthetic */}
+                <div className="hidden lg:flex flex-1 justify-center"></div>
+
+                {/* Right Side: Navigation */}
+                <nav className="hidden lg:flex items-center gap-8">
                     <Link
                         href="/"
-                        className="text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                        className="text-black hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
                     >
-                        {locale === 'ar' ? 'الرئيسية' : 'Home'}
+                        {locale === 'ar' ? 'الرئيسية' : 'HOME'}
                     </Link>
 
-                    {/* Products Dropdown */}
-                    <div className="relative" ref={dropdownRef}>
-                        <button
-                            onMouseEnter={() => setIsProductsDropdownOpen(true)}
-                            onClick={() => setIsProductsDropdownOpen(!isProductsDropdownOpen)}
-                            className="flex items-center gap-1 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
-                        >
-                            {locale === 'ar' ? 'المنتجات' : 'Products'}
-                            <ChevronDown className={`w-4 h-4 transition-transform ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {isProductsDropdownOpen && (
-                            <div
-                                className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg py-2"
-                                onMouseLeave={() => setIsProductsDropdownOpen(false)}
-                            >
-                                {categories && categories.length > 0 ? (
-                                    categories.map((category) => (
-                                        <Link
-                                            key={category.id}
-                                            href={`/${locale}/collection/${category.id}`}
-                                            className="block px-4 py-2 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
-                                        >
-                                            {getCategoryTitle(category.name, locale)}
-                                        </Link>
-                                    ))
-                                ) : (
-                                    <div className="px-4 py-2 text-gray-500 text-sm">
-                                        {locale === 'ar' ? 'لا توجد فئات' : 'No categories available'}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    <Link
+                        href={`/${locale}/collections/equipements`}
+                        className="text-black hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
+                    >
+                        {locale === 'ar' ? 'معدات وإكسسوارات' : 'ÉQUIPEMENTS & ACCESSOIRES'}
+                    </Link>
 
                     <Link
-                        href="/blog"
-                        className="text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                        href={`/${locale}/collections/packs-offres`}
+                        className="text-black hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
                     >
-                        {locale === 'ar' ? 'المدونة' : 'Blog'}
+                        {locale === 'ar' ? 'باقات وعروض' : 'PACKS & OFFRES'}
+                    </Link>
+
+                    <Link
+                        href={`/${locale}/collections/arts-martiaux`}
+                        className="text-black hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
+                    >
+                        {locale === 'ar' ? 'فنون قتالية' : 'ARTS MARTIAUX'}
                     </Link>
 
                     <Link
                         href={`/${locale}/track-order`}
-                        className="flex items-center gap-1.5 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                        className="text-black hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
                     >
-                        <Truck className="w-4 h-4" />
-                        {locale === 'ar' ? 'تتبع الطلب' : 'Track Order'}
+                        <Truck className="w-4 h-4 inline-block mr-2" />
+                        {locale === 'ar' ? 'تتبع الطلب' : 'TRACK ORDER'}
                     </Link>
                 </nav>
 
-                {/* Right Side: Search & Icons */}
-                <div className="flex items-center gap-3">
-
+                {/* Right Side: Search & Cart */}
+                <div className="flex items-center gap-4">
                     {/* Language Switcher */}
                     <LanguageSwitcher />
 
-                    {/* Mobile Search */}
+                    {/* Search Icon */}
                     <button
                         onClick={() => setIsSearchOpen(!isSearchOpen)}
-                        className="md:hidden p-2 text-gray-600 hover:bg-gray-50 rounded-full"
+                        className="p-2 text-gray-600 hover:text-emerald-600 transition-colors"
+                        aria-label="Search"
                     >
                         <Search className="w-5 h-5" />
                     </button>
-
-                    {/* Admin Lock - REMOVED for Public Storefront */}
 
                     {/* Cart */}
                     <button
@@ -181,84 +141,81 @@ export default function Navbar() {
                         )}
                     </button>
                 </div>
+
+                {/* Mobile Menu Toggle */}
+                <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="lg:hidden p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                >
+                    {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
             </div>
+
+            {/* Search Overlay */}
+            {isSearchOpen && (
+                <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center pt-20">
+                    <div className="w-full max-w-md mx-4 px-4">
+                        <form onSubmit={(e) => { handleSearch(e); setIsSearchOpen(false); }} className="relative">
+                            <div className="relative">
+                                <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    placeholder={t('search_placeholder')}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-white border border-gray-200 rounded-lg py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                                />
+                                <button type="submit" className="absolute right-3 top-3 text-gray-400 hover:text-emerald-600 transition-colors">
+                                    <Search className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Mobile Navigation Menu */}
             {isMobileMenuOpen && (
-                <div className="md:hidden border-t border-gray-100 bg-white">
-                    <nav className="container mx-auto px-4 py-4 space-y-2">
+                <div className="lg:hidden fixed inset-0 bg-white z-50 pt-20">
+                    <nav className="container mx-auto px-6 py-8 space-y-6">
                         <Link
                             href="/"
-                            className="block py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
                         >
-                            {locale === 'ar' ? 'الرئيسية' : 'Home'}
+                            {locale === 'ar' ? 'الرئيسية' : 'HOME'}
                         </Link>
 
-                        {/* Mobile Products Section */}
-                        <div className="py-2">
-                            <button
-                                onClick={() => setIsProductsDropdownOpen(!isProductsDropdownOpen)}
-                                className="flex items-center gap-1 text-gray-700 hover:text-emerald-600 font-medium transition-colors w-full"
-                            >
-                                {locale === 'ar' ? 'المنتجات' : 'Products'}
-                                <ChevronDown className={`w-4 h-4 transition-transform ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            {isProductsDropdownOpen && (
-                                <div className="mt-2 pl-4 space-y-1">
-                                    {categories && categories.length > 0 ? (
-                                        categories.map((category) => (
-                                            <Link
-                                                key={category.id}
-                                                href={`/${locale}/collection/${category.id}`}
-                                                className="block py-2 text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors rounded"
-                                            >
-                                                {getCategoryTitle(category.name, locale)}
-                                            </Link>
-                                        ))
-                                    ) : (
-                                        <div className="py-2 text-gray-500 text-sm">
-                                            {locale === 'ar' ? 'لا توجد فئات' : 'No categories available'}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
 
                         <Link
-                            href="/blog"
-                            className="block py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                            href={`/${locale}/collections/equipements`}
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
                         >
-                            {locale === 'ar' ? 'المدونة' : 'Blog'}
+                            {locale === 'ar' ? 'معدات وإكسسوارات' : 'ÉQUIPEMENTS & ACCESSOIRES'}
+                        </Link>
+
+                        <Link
+                            href={`/${locale}/collections/packs-offres`}
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
+                        >
+                            {locale === 'ar' ? 'باقات وعروض' : 'PACKS & OFFRES'}
+                        </Link>
+
+                        <Link
+                            href={`/${locale}/collections/arts-martiaux`}
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
+                        >
+                            {locale === 'ar' ? 'فنون قتالية' : 'ARTS MARTIAUX'}
                         </Link>
 
                         <Link
                             href={`/${locale}/track-order`}
-                            className="flex items-center gap-1.5 py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                            className="block py-3 text-gray-700 hover:text-emerald-600 font-light tracking-wider text-sm uppercase transition-colors"
                         >
-                            <Truck className="w-4 h-4" />
-                            {locale === 'ar' ? 'تتبع الطلب' : 'Track Order'}
+                            <Truck className="w-4 h-4 inline-block mr-2" />
+                            {locale === 'ar' ? 'تتبع الطلب' : 'TRACK ORDER'}
                         </Link>
                     </nav>
-                </div>
-            )}
-
-            {/* Mobile Search Bar */}
-            {isSearchOpen && (
-                <div className="md:hidden border-t border-gray-100 bg-gray-50 px-4 py-3">
-                    <form onSubmit={(e) => { handleSearch(e); setIsSearchOpen(false); }} className="relative">
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            placeholder={t('search_placeholder')}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white border border-gray-200 rounded-full py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                        />
-                        <button type="submit" className="absolute right-3 top-2.5 text-gray-400 hover:text-emerald-600 transition-colors" aria-label="Search">
-                            <Search className="w-5 h-5" />
-                        </button>
-                    </form>
                 </div>
             )}
         </header>

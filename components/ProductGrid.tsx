@@ -39,13 +39,13 @@ export default function ProductGrid({ products, searchQuery = "" }: ProductGridP
   const hasMore = visibleCount < products.length;
 
   return (
-    <div id="all-products" className="py-12 bg-white">
-      <div className="container mx-auto px-4">
+    <div id="all-products" className="py-8 bg-white overflow-hidden">
+      <div className="w-full px-2 md:px-4 lg:container lg:mx-auto">
 
         {/* Section Title */}
-        <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold text-gray-800">{t('title')}</h2>
-          <div className="w-12 h-1 bg-gray-200 mx-auto mt-2 rounded-full"></div>
+        <div className="text-center mb-8">
+          <h2 className="text-xl md:text-2xl font-black text-gray-900 uppercase tracking-widest">{t('title')}</h2>
+          <div className="w-12 h-1 bg-emerald-600 mx-auto mt-2 rounded-full"></div>
         </div>
 
         {/* The Grid: 2 cols mobile, 3 cols tablet, 4 cols desktop */}

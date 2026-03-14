@@ -220,7 +220,7 @@ export default function CheckoutModal({ isOpen, onClose, product }: CheckoutModa
             <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative animate-in slide-in-from-bottom-4 zoom-in-95 duration-200">
 
                 {/* Close */}
-                <button onClick={onClose} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full hover:bg-red-50 hover:text-red-500 transition z-10">
+                <button onClick={onClose} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition z-10">
                     <X className="w-5 h-5" />
                 </button>
 

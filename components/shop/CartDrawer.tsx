@@ -203,24 +203,24 @@ export default function CartDrawer() {
 
                         {/* ── Rule 2: MOV warning bar ──────────────────────────────────────────── */}
                         {!meetsMinOrder && (
-                            <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
-                                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                                 <div className="text-right flex-1">
-                                    <p className="text-red-800 font-bold text-sm leading-relaxed">
-                                        {locale === 'ar' 
+                                    <p className="text-emerald-800 font-bold text-sm leading-relaxed">
+                                        {locale === 'ar'
                                             ? `عذراً، يجب أن يصل مجموع طلبك إلى 149 درهم لتأكيده. متبقي لك فقط ${remaining.toFixed(0)} درهم`
                                             : `Sorry, your order must reach 149 DH to confirm. Only ${remaining.toFixed(0)} DH remaining`
                                         }
                                     </p>
                                     <div className="mt-2">
                                         {/* Progress bar */}
-                                        <div className="w-full bg-red-100 rounded-full h-2">
+                                        <div className="w-full bg-emerald-100 rounded-full h-2">
                                             <div
-                                                className="bg-red-500 h-2 rounded-full transition-all duration-500"
+                                                className="bg-emerald-600 h-2 rounded-full transition-all duration-500"
                                                 style={{ width: `${Math.min((subtotal / MIN_ORDER_VALUE) * 100, 100)}%` }}
                                             />
                                         </div>
-                                        <p className="text-red-600 text-xs mt-1 font-bold">
+                                        <p className="text-emerald-600 text-xs mt-1 font-bold">
                                             {locale === 'ar'
                                                 ? `المجموع الحالي: ${subtotal.toFixed(0)} درهم من ${MIN_ORDER_VALUE} درهم`
                                                 : `Current: ${subtotal.toFixed(0)} DH of ${MIN_ORDER_VALUE} DH minimum`

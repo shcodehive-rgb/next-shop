@@ -52,8 +52,8 @@ export default function BestSellers({ products }: { products: any[] }) {
         {/* View More Button */}
         <div className="flex justify-center mt-12">
           <Link
-            href={`/${locale}/best-sellers`}
-            className="group inline-flex items-center gap-3 px-10 py-3 rounded-full border border-emerald-400 text-emerald-700 font-light tracking-widest text-sm uppercase hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-500 hover:shadow-lg hover:shadow-emerald-100 hover:-translate-y-0.5 active:scale-95"
+            href={`/${locale}/collections/all`}
+            className="group inline-flex items-center gap-3 px-10 py-3 rounded-none border border-gray-900 text-gray-900 font-light tracking-widest text-sm uppercase hover:bg-gray-800 hover:text-white transition-all duration-500 hover:shadow-lg hover:shadow-gray-100 hover:-translate-y-0.5 active:scale-95"
           >
             <span>{locale === 'ar' ? 'رؤية المزيد' : 'View More'}</span>
             {isRTL

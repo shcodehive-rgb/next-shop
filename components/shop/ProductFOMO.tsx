@@ -61,8 +61,8 @@ export default function ProductFOMO({ stock }: ProductFOMOProps) {
 
             {/* Low Stock Warning */}
             {stock !== undefined && stock > 0 && stock < 10 && (
-                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-100">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-ping" />
                     <span>
                         Only <strong>{stock}</strong> items left in stock!
                     </span>

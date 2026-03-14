@@ -37,6 +37,7 @@ export interface Product {
     images?: string[];
     variants?: string[]; // Array of variants (e.g., ["S", "M", "L"])
     category: string;
+    categories?: string[]; // Array of categories for multi-select support
     description?: string;
     highlights?: string; // Stored as newline-separated string
     howToUse?: string;
@@ -53,6 +54,8 @@ export interface Product {
     selectedVariant?: string; // For cart items
     reviews?: Review[];
     isBestSeller?: boolean;
+    isNewArrival?: boolean;
+    isFeatured?: boolean;
     originalPrice?: number;
     discountLabel?: string;
     shipping_type?: 'free' | 'standard'; // Free shipping or standard city rate
@@ -61,6 +64,7 @@ export interface Product {
     showInMidPageSlider?: boolean;
     metaTitle?: string;
     metaDescription?: string;
+    createdAt?: string;
 }
 
 export interface Customer {
@@ -212,6 +216,8 @@ const defaultSettings: SiteSettings = {
     primaryColor: "#10b981",
     showFeatures: true,
     shippingMode: 'free',
+    phoneNumber: "212688771251",
+    whatsappPhone: "212688771251",
 };
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);

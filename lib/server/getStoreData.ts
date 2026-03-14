@@ -78,6 +78,7 @@ async function fetchStoreData(): Promise<StoreData> {
                 visible: data.visible,
                 discountLabel: data.discountLabel,
                 stock: data.stock,
+                createdAt: data.createdAt,
                 // NO description
             };
         });

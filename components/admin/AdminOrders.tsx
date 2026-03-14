@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useShop, Order } from "@/context/ShopContext";
 import { useTranslations, useLocale } from "next-intl";
-import { Search, Package, Clock, User, Phone, MapPin, Star, ChevronDown } from "lucide-react";
+import { Search, Package, Clock, User, Phone, MapPin, Star, ChevronDown, Trash } from "lucide-react";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 
 const ORDER_STATUSES = [
     { value: "pending", labelEn: "Pending", color: "bg-yellow-100 text-yellow-800" },
@@ -72,7 +73,7 @@ function StatusDropdown({ order, onUpdate }: { order: Order; onUpdate: (id: stri
 }
 
 export default function AdminOrders() {
-    const { orders } = useShop();
+    const { orders, settings } = useShop(); // need settings for storeName
     const t = useTranslations("Admin");
     const locale = useLocale();
 
@@ -80,6 +81,8 @@ export default function AdminOrders() {
     const [statusFilter, setStatusFilter] = useState("all");
     // Optimistic local overrides: { [orderId]: status }
     const [localStatus, setLocalStatus] = useState<Record<string, string>>({});
+    // Local deletion state to hide deleted items immediately
+    const [deletedOrderIds, setDeletedOrderIds] = useState<Set<string>>(new Set());
 
     const customerFrequency = orders.reduce((acc: Record<string, number>, order: Order) => {
         const phone = order.client?.phone || "unknown";
@@ -87,11 +90,13 @@ export default function AdminOrders() {
         return acc;
     }, {});
 
-    // Merge RTDB orders with local overrides
-    const ordersWithOverrides = orders.map((o: Order) => ({
-        ...o,
-        status: localStatus[o.id] ?? o.status,
-    }));
+    // Merge RTDB orders with local overrides and filter out deleted
+    const ordersWithOverrides = orders
+        .filter(o => !deletedOrderIds.has(o.id))
+        .map((o: Order) => ({
+            ...o,
+            status: localStatus[o.id] ?? o.status,
+        }));
 
     const filteredOrders = ordersWithOverrides
         .filter(order => {
@@ -104,9 +109,54 @@ export default function AdminOrders() {
         })
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Optimistic status update — reflects immediately without waiting for RTDB sync
+    // Optimistic status update
     const handleStatusUpdate = (orderId: string, newStatus: string) => {
         setLocalStatus(prev => ({ ...prev, [orderId]: newStatus }));
+    };
+
+    const handleDelete = async (orderId: string) => {
+        const result = await Swal.fire({
+            title: locale === 'ar' ? 'هل أنت متأكد؟' : 'Are you sure?',
+            text: locale === 'ar' ? 'سيتم حذف الطلب نهائياً!' : 'This order will be deleted permanently!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: locale === 'ar' ? 'نعم، احذفه' : 'Yes, delete it',
+            cancelButtonText: locale === 'ar' ? 'إلغاء' : 'Cancel'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await fetch("/api/delete-order", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        orderId,
+                        storeName: settings.storeName,
+                    }),
+                });
+
+                if (res.ok) {
+                    setDeletedOrderIds(prev => new Set(prev).add(orderId));
+                    toast.success(locale === 'ar' ? 'تم حذف الطلب' : 'Order deleted successfully');
+                } else {
+                    toast.error("Failed to delete order");
+                }
+            } catch {
+                toast.error("Network error");
+            }
+        }
+    };
+
+    /** Safeguard against [object Object] for existing bugged orders */
+    const renderItems = (items: any) => {
+        if (!items) return "—";
+        if (typeof items === 'string') {
+            // If it contains [object Object], it's irrecoverable but we can at least hide the mess
+            return items.replace(/\[object Object\]/g, "Product");
+        }
+        return "—";
     };
 
     return (
@@ -147,6 +197,7 @@ export default function AdminOrders() {
                                 <th className="p-4 font-semibold text-gray-600 max-w-xs">{t("items") || "Items"}</th>
                                 <th className="p-4 font-semibold text-gray-600 text-right">{t("total") || "Total"}</th>
                                 <th className="p-4 font-semibold text-gray-600 text-center">{t("status") || "Status"}</th>
+                                <th className="p-4 font-semibold text-gray-600 text-center">{t("actions") || "Actions"}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -194,7 +245,9 @@ export default function AdminOrders() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="p-4 max-w-xs text-sm text-gray-600 leading-relaxed">{order.items}</td>
+                                        <td className="p-4 max-w-xs text-sm text-gray-600 leading-relaxed">
+                                            {renderItems(order.items)}
+                                        </td>
                                         <td className="p-4 text-right">
                                             <span className="font-mono font-bold text-emerald-700 text-lg">
                                                 {order.total?.toLocaleString()} MAD
@@ -203,12 +256,21 @@ export default function AdminOrders() {
                                         <td className="p-4 text-center">
                                             <StatusDropdown order={order} onUpdate={handleStatusUpdate} />
                                         </td>
+                                        <td className="p-4 text-center">
+                                            <button
+                                                onClick={() => handleDelete(order.id)}
+                                                className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors group"
+                                                title="Delete Order"
+                                            >
+                                                <Trash className="w-4 h-4" />
+                                            </button>
+                                        </td>
                                     </tr>
                                 );
                             })}
                             {filteredOrders.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="p-12 text-center text-gray-400">
+                                    <td colSpan={7} className="p-12 text-center text-gray-400">
                                         <Package className="w-12 h-12 mb-3 opacity-20 mx-auto" />
                                         <p>{t("noOrdersFound") || "No orders found."}</p>
                                     </td>

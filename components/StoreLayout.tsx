@@ -13,7 +13,7 @@ import { useMetaPageView } from "@/hooks/useMetaPageView";
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isAdmin = pathname.startsWith("/admin");
-    const { isCheckoutOpen, closeCheckout } = useShop();
+    const { isCheckoutOpen, closeCheckout, openCart } = useShop();
 
     // 🔥 Server-side Meta CAPI PageView — fires on every route change
     useMetaPageView();
@@ -27,7 +27,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
     return (
         <div className="min-h-screen flex flex-col">
             <TopAnnouncement />
-            <Navbar />
+            <Navbar onOpenCart={openCart} />
             <CartDrawer />
             <main className="flex-grow flex flex-col">
                 {children}

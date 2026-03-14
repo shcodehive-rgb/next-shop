@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { useShop, Product } from "@/context/ShopContext";
 import { toast } from "sonner";
-import { Save, Plus, Trash2, Edit, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Save, Plus, Trash2, Edit, Image as ImageIcon, Loader2, Package } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { getProductTitle } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { translateText } from "@/lib/translateText";
-import { Video, ImagePlus, X } from "lucide-react";
-import { uploadImageToStorage, uploadVideoToStorage } from "@/lib/storage-utils";
+import { uploadImageToStorage } from "@/lib/storage-utils";
 import { notifyMakeWebhook } from "@/lib/makeWebhook";
 import YouTubePlayer from "@/components/YouTubePlayer";
 
@@ -21,12 +20,10 @@ export default function AdminProducts() {
     const t = useTranslations('Admin');
 
     const defaultForm = {
-        title: "", price: "", cost: "", category: "General", stock: 10, description: "", image: "", images: [] as string[],
+        title: "", price: "", cost: "", category: "equipements", categories: ["equipements"] as string[], stock: 10, description: "", image: "", images: [] as string[],
         wholesalePrice: "", minWholesaleQty: 0, allowAddToCart: true, reviews: [] as any[], isBestSeller: false,
         originalPrice: "", discountLabel: "", shipping_type: "standard" as "standard" | "free",
         variants: [] as string[],
-        highlights: "", howToUse: "", ingredients: "",
-        videoUrl: "", richContentImages: [] as string[],
         showInMidPageSlider: false,
         technicalSpecifications: [] as { key: string; value: string }[],
         metaTitle: "", metaDescription: "",
@@ -59,7 +56,8 @@ export default function AdminProducts() {
                     title: translatedTitle,
                     originalPrice: formData.originalPrice ? Number(formData.originalPrice) : 0,
                     image: formData.images[0] || formData.image || "https://placehold.co/400?text=No+Image",
-                    images: formData.images.length > 0 ? formData.images : (formData.image ? [formData.image] : [])
+                    images: formData.images.length > 0 ? formData.images : (formData.image ? [formData.image] : []),
+                    createdAt: new Date().toISOString()
                 };
                 await addProduct(newProduct);
                 // 🔔 Notify Make.com — fire-and-forget, never blocks save
@@ -86,7 +84,8 @@ export default function AdminProducts() {
             title: loadedTitle,
             price: p.price,
             cost: p.cost || "",
-            category: p.category,
+            category: p.category || (p.categories && p.categories[0]) || "equipements",
+            categories: p.categories || (p.category ? [p.category] : ["equipements"]),
             stock: p.stock || 0,
             description: p.description || "",
             image: p.image,
@@ -99,11 +98,6 @@ export default function AdminProducts() {
             discountLabel: p.discountLabel || "",
             reviews: p.reviews || [],
             variants: p.variants || [],
-            highlights: p.highlights || "",
-            howToUse: p.howToUse || "",
-            ingredients: p.ingredients || "",
-            videoUrl: p.videoUrl || "",
-            richContentImages: p.richContentImages || [],
             showInMidPageSlider: p.showInMidPageSlider || false,
             technicalSpecifications: p.technicalSpecifications || [],
 
@@ -116,30 +110,6 @@ export default function AdminProducts() {
     };
 
     // Rich Images Upload Handler
-    const handleRichImagesUpload = async (files: FileList | null) => {
-        if (!files) return;
-        setLoading(true);
-        const toastId = toast.loading(`Uploading ${files.length} image(s) to Storage...`);
-        const newImages: string[] = [];
-
-        try {
-            for (let i = 0; i < files.length; i++) {
-                const url = await uploadImageToStorage(files[i], "products/rich", {
-                    maxSizeMB: 0.5,
-                    maxWidthOrHeight: 1200,
-                });
-                newImages.push(url);
-            }
-
-            setFormData(prev => ({ ...prev, richContentImages: [...prev.richContentImages, ...newImages] }));
-            toast.success(`${newImages.length} image(s) uploaded!`, { id: toastId });
-        } catch (error) {
-            console.error(error);
-            toast.error("Upload failed", { id: toastId });
-        } finally {
-            setLoading(false);
-        }
-    };
     const handleImageUpload = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
         setLoading(true);
@@ -297,25 +267,43 @@ export default function AdminProducts() {
                         {/* Discount Fields */}
                         <div className="col-span-1">
                             <label className="block text-xs font-bold text-gray-500 mb-1">{t('original_price')}</label>
-                            <input type="number" value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} className="w-full p-3 bg-red-50 border border-red-100 rounded-xl font-bold text-red-600 placeholder-red-200" placeholder="Optional" />
+                            <input type="number" value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-700 placeholder-gray-300" placeholder="Optional" />
                         </div>
                         <div className="col-span-1">
                             <label className="block text-xs font-bold text-gray-500 mb-1">{t('discount_badge')}</label>
-                            <input value={formData.discountLabel} onChange={e => setFormData({ ...formData, discountLabel: e.target.value })} className="w-full p-3 bg-red-50 border border-red-100 rounded-xl font-bold text-red-600 placeholder-red-200" placeholder="-30% or PROMO" />
+                            <input value={formData.discountLabel} onChange={e => setFormData({ ...formData, discountLabel: e.target.value })} className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-700 placeholder-gray-300" placeholder="-30% or PROMO" />
                         </div>
-                        <div className="col-span-2">
-                            <label className="block text-xs font-bold text-gray-500 mb-1">{t('category')}</label>
-                            <select
-                                value={formData.category}
-                                onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                className="w-full p-3 bg-gray-50 border rounded-xl font-bold text-gray-900 appearance-none"
-                            >
-                                <option value="General">General</option>
-                                {/* @ts-ignore */}
-                                {categories.map((c: any) => (
-                                    <option key={c.id} value={getProductTitle(c.name)}>{getProductTitle(c.name)}</option>
+                        <div className="col-span-2 p-4 bg-emerald-50/30 border border-emerald-100 rounded-2xl">
+                            <label className="block text-sm font-bold text-emerald-800 mb-3 flex items-center gap-2">
+                                <Package className="w-4 h-4" /> {t('category') || "التصنيف (Multi-Select)"}
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                {[
+                                    { id: 'equipements', label: 'Équipements & Accessoires' },
+                                    { id: 'packs-offres', label: 'Packs & Offres' },
+                                    { id: 'arts-martiaux', label: 'Arts Martiaux' }
+                                ].map((cat) => (
+                                    <label key={cat.id} className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${formData.categories.includes(cat.id) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-white border-gray-100 text-gray-600 hover:border-emerald-200'}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.categories.includes(cat.id)}
+                                            onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                const newCats = checked
+                                                    ? [...formData.categories, cat.id]
+                                                    : formData.categories.filter(id => id !== cat.id);
+                                                setFormData({
+                                                    ...formData,
+                                                    categories: newCats,
+                                                    category: newCats[0] || "equipements" // Fallback for single field
+                                                });
+                                            }}
+                                            className="w-5 h-5 accent-emerald-400 rounded"
+                                        />
+                                        <span className="text-sm font-bold">{cat.label}</span>
+                                    </label>
                                 ))}
-                            </select>
+                            </div>
                         </div>
                         <div className="col-span-2 flex flex-wrap gap-3">
                             <label className="flex items-center gap-2 p-3 border rounded-xl bg-gray-50 cursor-pointer hover:bg-gray-100 flex-1 min-w-[150px]">
@@ -367,196 +355,101 @@ export default function AdminProducts() {
                             </div>
                         </div>
 
-                        {/* NEW: Rich Content Fields */}
-                        <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">{t('highlights') || "Highlights (Bullet points per line)"}</label>
-                                <textarea
-                                    className="w-full p-2 border rounded-lg h-32"
-                                    placeholder={"Feature 1\nFeature 2\nFeature 3"}
-                                    value={formData.highlights}
-                                    onChange={(e) => setFormData({ ...formData, highlights: e.target.value })}
-                                ></textarea>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">{t('howToUse') || "How to Use"}</label>
-                                <textarea
-                                    className="w-full p-2 border rounded-lg h-32"
-                                    placeholder="Explain how to use the product..."
-                                    value={formData.howToUse}
-                                    onChange={(e) => setFormData({ ...formData, howToUse: e.target.value })}
-                                ></textarea>
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-bold text-gray-700 mb-1">{t('ingredients') || "Ingredients / Materials"}</label>
-                                <textarea
-                                    className="w-full p-2 border rounded-lg h-24"
-                                    placeholder="List ingredients or materials..."
-                                    value={formData.ingredients}
-                                    onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
-                                ></textarea>
-                            </div>
 
-                            {/* RICH CONTENT (A+) */}
-                            <div className="md:col-span-2 space-y-4 border-t pt-4">
-                                <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                                    <ImagePlus className="w-5 h-5 text-purple-600" /> Rich Content (A+)
-                                </h3>
 
-                                {/* YouTube Video URL */}
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1">Product Video (YouTube URL)</label>
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative w-full">
+                        {/* NEW: BUNDLES / VOLUME DISCOUNTS */}
+                        <div className="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
+                            <label className="block text-sm font-bold text-emerald-800 mb-4 flex items-center gap-2">
+                                <Save className="w-4 h-4" /> {t('bundle_pricing') || "Volume Discounts / Bundles"}
+                            </label>
+
+                            <div className="space-y-3 mb-4">
+                                {formData.bundles.map((bundle, idx) => (
+                                    <div key={idx} className="flex gap-2 items-end bg-white p-3 rounded-lg border shadow-sm">
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-500 uppercase">Qty</label>
                                             <input
-                                                type="url"
-                                                placeholder="https://www.youtube.com/watch?v=..."
-                                                value={formData.videoUrl}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, videoUrl: e.target.value }))}
-                                                className="w-full p-2 border rounded-lg"
+                                                type="number"
+                                                value={bundle.qty}
+                                                onChange={(e) => {
+                                                    const newBundles = [...formData.bundles];
+                                                    newBundles[idx].qty = Number(e.target.value);
+                                                    setFormData({ ...formData, bundles: newBundles });
+                                                }}
+                                                className="w-20 p-2 border rounded font-bold"
                                             />
                                         </div>
-                                        {formData.videoUrl && (
-                                            <div className="text-green-600 text-xs font-bold flex items-center gap-1">
-                                                <Video className="w-4 h-4" /> Added
-                                            </div>
-                                        )}
-                                    </div>
-                                    {formData.videoUrl && (
-                                        <div className="mt-2 w-full">
-                                            <YouTubePlayer videoUrl={formData.videoUrl} />
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Rich Images Upload */}
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1">Rich Content Images (Vertical Infographics)</label>
-                                    <div className="grid grid-cols-3 gap-2 mb-2">
-                                        {formData.richContentImages.map((img, i) => (
-                                            <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border bg-gray-50">
-                                                <img src={img} className="w-full h-full object-cover" />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const newImages = formData.richContentImages.filter((_, idx) => idx !== i);
-                                                        setFormData({ ...formData, richContentImages: newImages });
-                                                    }}
-                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"
-                                                >
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                        <div className="aspect-[3/4] bg-purple-50 border-2 border-dashed border-purple-200 rounded-lg flex flex-col items-center justify-center relative hover:border-purple-500 transition cursor-pointer">
-                                            <ImagePlus className="w-6 h-6 text-purple-400 mb-1" />
-                                            <span className="text-[10px] font-bold text-purple-400">Add Info-Graphic</span>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-500 uppercase">Total Price</label>
                                             <input
-                                                type="file"
-                                                accept="image/*"
-                                                multiple
-                                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                                onChange={e => handleRichImagesUpload(e.target.files)}
+                                                type="number"
+                                                value={bundle.price}
+                                                onChange={(e) => {
+                                                    const newBundles = [...formData.bundles];
+                                                    newBundles[idx].price = Number(e.target.value);
+                                                    setFormData({ ...formData, bundles: newBundles });
+                                                }}
+                                                className="w-24 p-2 border rounded font-bold text-emerald-600"
                                             />
                                         </div>
+                                        <div className="flex-1">
+                                            <label className="text-[10px] font-bold text-gray-500 uppercase">Badge (Optional)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Save 20%"
+                                                value={bundle.badgeText || ""}
+                                                onChange={(e) => {
+                                                    const newBundles = [...formData.bundles];
+                                                    newBundles[idx].badgeText = e.target.value;
+                                                    setFormData({ ...formData, bundles: newBundles });
+                                                }}
+                                                className="w-full p-2 border rounded"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button" // Prevent form submission
+                                            onClick={() => {
+                                                const newBundles = formData.bundles.filter((_, i) => i !== idx);
+                                                setFormData({ ...formData, bundles: newBundles });
+                                            }}
+                                            className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                </div>
+                                ))}
                             </div>
-                        </div>
-                    </div>
 
-                    {/* NEW: BUNDLES / VOLUME DISCOUNTS */}
-                    <div className="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
-                        <label className="block text-sm font-bold text-emerald-800 mb-4 flex items-center gap-2">
-                            <Save className="w-4 h-4" /> {t('bundle_pricing') || "Volume Discounts / Bundles"}
-                        </label>
-
-                        <div className="space-y-3 mb-4">
-                            {formData.bundles.map((bundle, idx) => (
-                                <div key={idx} className="flex gap-2 items-end bg-white p-3 rounded-lg border shadow-sm">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Qty</label>
-                                        <input
-                                            type="number"
-                                            value={bundle.qty}
-                                            onChange={(e) => {
-                                                const newBundles = [...formData.bundles];
-                                                newBundles[idx].qty = Number(e.target.value);
-                                                setFormData({ ...formData, bundles: newBundles });
-                                            }}
-                                            className="w-20 p-2 border rounded font-bold"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Total Price</label>
-                                        <input
-                                            type="number"
-                                            value={bundle.price}
-                                            onChange={(e) => {
-                                                const newBundles = [...formData.bundles];
-                                                newBundles[idx].price = Number(e.target.value);
-                                                setFormData({ ...formData, bundles: newBundles });
-                                            }}
-                                            className="w-24 p-2 border rounded font-bold text-emerald-600"
-                                        />
-                                    </div>
-                                    <div className="flex-1">
-                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Badge (Optional)</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Save 20%"
-                                            value={bundle.badgeText || ""}
-                                            onChange={(e) => {
-                                                const newBundles = [...formData.bundles];
-                                                newBundles[idx].badgeText = e.target.value;
-                                                setFormData({ ...formData, bundles: newBundles });
-                                            }}
-                                            className="w-full p-2 border rounded"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button" // Prevent form submission
-                                        onClick={() => {
-                                            const newBundles = formData.bundles.filter((_, i) => i !== idx);
-                                            setFormData({ ...formData, bundles: newBundles });
-                                        }}
-                                        className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ))}
+                            <button
+                                type="button" // Prevent form submission
+                                onClick={() => setFormData({
+                                    ...formData,
+                                    bundles: [...formData.bundles, { qty: 2, price: 0, badgeText: "" }]
+                                })}
+                                className="text-sm font-bold text-emerald-700 flex items-center gap-1 hover:underline"
+                            >
+                                + Add Bundle Deal
+                            </button>
                         </div>
 
-                        <button
-                            type="button" // Prevent form submission
-                            onClick={() => setFormData({
-                                ...formData,
-                                bundles: [...formData.bundles, { qty: 2, price: 0, badgeText: "" }]
-                            })}
-                            className="text-sm font-bold text-emerald-700 flex items-center gap-1 hover:underline"
-                        >
-                            + Add Bundle Deal
-                        </button>
-                    </div>
-
-                    {/* Image Upload */}
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1">{t('product_images')}</label>
-                        <div className="grid grid-cols-3 gap-2 mb-2">
-                            {formData.images.map((img, i) => (
-                                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
-                                    <img src={img} className="w-full h-full object-cover" />
-                                    <button type="button" onClick={() => removeGalleryImage(i)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"><Trash2 className="w-3 h-3" /></button>
-                                </div>
-                            ))}
-                            {formData.images.length < 5 && (
-                                <div className="aspect-square bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center relative hover:border-emerald-500 transition cursor-pointer">
-                                    <ImageIcon className="w-6 h-6 text-gray-400 mb-1" />
-                                    <span className="text-[10px] font-bold text-gray-400">{t('add_image')}</span>
-                                    <input type="file" accept="image/*" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleImageUpload(e.target.files)} />
-                                </div>
-                            )}
+                        {/* Image Upload */}
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">{t('product_images')}</label>
+                            <div className="grid grid-cols-3 gap-2 mb-2">
+                                {formData.images.map((img, i) => (
+                                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
+                                        <img src={img} className="w-full h-full object-cover" />
+                                        <button type="button" onClick={() => removeGalleryImage(i)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"><Trash2 className="w-3 h-3" /></button>
+                                    </div>
+                                ))}
+                                {formData.images.length < 5 && (
+                                    <div className="aspect-square bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center relative hover:border-emerald-500 transition cursor-pointer">
+                                        <ImageIcon className="w-6 h-6 text-gray-400 mb-1" />
+                                        <span className="text-[10px] font-bold text-gray-400">{t('add_image')}</span>
+                                        <input type="file" accept="image/*" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleImageUpload(e.target.files)} />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -622,11 +515,12 @@ export default function AdminProducts() {
                                         </td>
                                         <td className="p-4 font-bold text-emerald-600">{p.price} DH</td>
                                         <td className="p-4 text-gray-500">
-                                            {p.originalPrice ? (
-                                                <span className="line-through text-red-400 font-medium">
+                                            {p.originalPrice && (
+                                                <span className="line-through text-gray-400 font-medium">
                                                     {p.originalPrice} DH
                                                 </span>
-                                            ) : (
+                                            )}
+                                            {!p.originalPrice && (
                                                 <span className="text-gray-300">-</span>
                                             )}
                                         </td>

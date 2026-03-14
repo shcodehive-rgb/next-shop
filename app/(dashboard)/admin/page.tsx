@@ -5,7 +5,7 @@ import { useShop } from "@/context/ShopContext";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import { getLocalized } from "@/lib/utils";
-import { Lock, LogOut, Package, Tag, Palette, Settings, Star, FileText, Truck, ShoppingBag, Menu, X, Users, PenTool } from "lucide-react";
+import { Lock, LogOut, Package, Tag, Palette, Settings, Star, FileText, Truck, ShoppingBag, Menu, X, Users, PenTool, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Sub-Components
@@ -18,6 +18,7 @@ import AdminReviews from "@/components/admin/AdminReviews";
 import AdminShipping from "@/components/admin/AdminOrders";
 import AdminOrders from "@/components/admin/AdminOrders";
 import AdminBlogs from "@/components/admin/AdminBlogs";
+import ProductCleanupHelper from "@/components/admin/ProductCleanupHelper";
 
 export default function AdminPage() {
     const { settings } = useShop();
@@ -27,7 +28,7 @@ export default function AdminPage() {
     const router = useRouter();
 
     // Key State
-    const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'orders' | 'customers' | 'design' | 'settings' | 'reviews' | 'shipping' | 'blogs'>('orders');
+    const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'orders' | 'customers' | 'design' | 'settings' | 'reviews' | 'shipping' | 'blogs' | 'cleanup'>('orders');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Auth State
@@ -100,6 +101,7 @@ export default function AdminPage() {
         { id: 'design', label: t('design'), icon: Palette },
         { id: 'reviews', label: t('reviews'), icon: Star },
         { id: 'blogs', label: t('blogs') || 'المدونة', icon: PenTool },
+        { id: 'cleanup', label: '🏋️ Cleanup', icon: Trash2 },
         { id: 'settings', label: t('settings'), icon: Settings },
     ];
 
@@ -222,6 +224,7 @@ export default function AdminPage() {
                         {activeTab === 'design' && <AdminDesign />}
                         {activeTab === 'reviews' && <AdminReviews />}
                         {activeTab === 'blogs' && <AdminBlogs />}
+                        {activeTab === 'cleanup' && <ProductCleanupHelper />}
                         {activeTab === 'settings' && <AdminSettings />}
                     </div>
                 </div>

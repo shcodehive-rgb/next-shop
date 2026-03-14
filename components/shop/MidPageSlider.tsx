@@ -19,7 +19,7 @@ function SliderCard({ product, locale }: { product: Product; locale: string }) {
         <Link
             href={`/${locale}/product/${product.id}`}
             // mx-2 = 8px gap on each side; flex-none locks width
-            className="group flex-none w-[160px] sm:w-[185px] md:w-[200px] mx-2 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            className="group flex-none w-[160px] sm:w-[185px] md:w-[200px] mx-2 bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
         >
             {/* Image */}
             <div className="relative aspect-square w-full bg-gray-50 overflow-hidden">

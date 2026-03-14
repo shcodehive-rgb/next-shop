@@ -1,18 +1,9 @@
-import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Tajawal } from "next/font/google";
-import { ShopProvider } from "@/context/ShopContext";
-import { Toaster } from "sonner";
 import "../../globals.css";
 
-import StoreLayout from "@/components/StoreLayout";
-import Analytics from "@/components/Analytics";
-import WhatsAppButton from "@/components/WhatsAppButton";
-import StoreProtectedWrapper from "@/components/StoreProtectedWrapper";
-import ScrollToTop from "@/components/ScrollToTop";
-import FacebookPixel from "@/components/FacebookPixel";
-import TikTokPixel from "@/components/TikTokPixel";
+import { LocaleLayoutClient } from "./LocaleLayoutClient";
 
 const tajawal = Tajawal({
     subsets: ["arabic"],
@@ -59,21 +50,9 @@ export default async function LocaleLayout({
                 <meta name="facebook-domain-verification" content="xx54atu8vrt2wxv5202ru235c6kra1" />
             </head>
             <body className={`${tajawal.className} bg-white text-gray-900 antialiased`}>
-                <NextIntlClientProvider messages={messages}>
-                    <ShopProvider>
-                        <StoreProtectedWrapper>
-                            <FacebookPixel />
-                            <TikTokPixel />
-                            <Analytics />
-                            <StoreLayout>
-                                {children}
-                            </StoreLayout>
-                            <WhatsAppButton />
-                            <ScrollToTop />
-                        </StoreProtectedWrapper>
-                        <Toaster position="top-center" richColors />
-                    </ShopProvider>
-                </NextIntlClientProvider>
+                <LocaleLayoutClient locale={locale} messages={messages}>
+                    {children}
+                </LocaleLayoutClient>
             </body>
         </html>
     );

@@ -21,7 +21,17 @@
         "follow_us": "Follow Us",
         "rights": "All rights reserved",
         "information": "Information",
-        "description": "Your premier destination for online shopping. Quality, guarantee, and fast delivery."
+        "description": "Your premier destination for online shopping. Quality, guarantee, and fast delivery.",
+        "policies": "Our Policies",
+        "home": "Home",
+        "equipments": "Equipments & Accessories",
+        "packs": "Packs & Offers",
+        "arts_martiaux": "Martial Arts",
+        "track": "Track Order",
+        "refund_policy": "Refund & Exchange Policy",
+        "privacy_policy": "Privacy Policy",
+        "cod_policy": "Cash on Delivery Policy",
+        "shipping_policy": "Shipping & Delivery Policy"
     },
     "Product": {
         "add_to_cart": "Add to Cart",

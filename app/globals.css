@@ -29,59 +29,12 @@ body {
   color: #171717 !important;
 }
 
-/* Custom Scrollbar for professional look */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Scrollbar Hide Utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #e5e7eb;
-  border-radius: 999px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #d1d5db;
-}
-
-/* Best Sellers Scroll Animations */
-@keyframes scroll-rtl {
-  0% {
-    transform: translateX(0);
-  }
-
-  100% {
-    transform: translateX(50%);
-  }
-}
-
-@keyframes scroll-ltr {
-  0% {
-    transform: translateX(-50%);
-  }
-
-  100% {
-    transform: translateX(0);
-  }
-}
-
-.animate-scroll-rtl {
-  animation: scroll-rtl 40s linear infinite;
-  display: flex;
-  width: max-content;
-}
-
-.animate-scroll-ltr {
-  animation: scroll-ltr 40s linear infinite;
-  display: flex;
-  width: max-content;
-}
-
-.animate-scroll-rtl:hover,
-.animate-scroll-ltr:hover {
-  animation-play-state: paused;
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
 }

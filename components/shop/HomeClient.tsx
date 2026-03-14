@@ -1,17 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
-
+import { useLocale } from "next-intl";
 import { useShop, Product, Category, SiteSettings } from "@/context/ShopContext";
 import HeroBanner from "@/components/HeroBanner";
-import BestSellers from "@/components/BestSellers";
-import PromoBanner from "@/components/PromoBanner";
 import FeaturesBar from "@/components/FeaturesBar";
 import HomepageReviews from "@/components/HomepageReviews";
 import StoreReviews from "@/components/StoreReviews";
-import ProductGrid from "@/components/ProductGrid";
-import MidPageSlider from "@/components/shop/MidPageSlider";
-import CategoryShowcase from "@/components/shop/CategoryShowcase";
+import ProductCard from "@/components/shop/ProductCard";
+import CategoryShowcase from "./CategoryShowcase";
+import CategoryGrid from "@/components/CategoryGrid";
 
 interface HomeClientProps {
     initialProducts?: Product[];
@@ -21,7 +20,9 @@ interface HomeClientProps {
 
 export default function HomeClient({ initialProducts, initialCategories, initialSettings }: HomeClientProps) {
     // 🔥 HYBRID APPROACH: Use Props for Instant Load, fallback to Context for Real-time
-    const { settings: contextSettings, products: contextProducts, categories: contextCategories } = useShop();
+    const { settings: contextSettings, products: contextProducts, categories: contextCategories, addToCart } = useShop();
+    const locale = useLocale();
+    const isRTL = locale === "ar";
 
     // 🛡️ SECURITY: Disable Right-Click & Inspect
     useEffect(() => {
@@ -45,78 +46,104 @@ export default function HomeClient({ initialProducts, initialCategories, initial
         };
     }, []);
 
-    // Prefer Context if loaded (for real-time updates), otherwise use Initial Props (for instant SSR)
-    // Actually, Context is empty initially -> causes flicker. 
-    // Logic: If Context has data, it means client hydration finished and real-time sync started. 
-    // But we want to show PRE-RENDERED data immediately. 
-
-    // Simple Strategy: Use Props if available. `useShop` will update eventually. 
-    // Ideally, we sync Props into Context or just use Props for display.
-    // For pure display, Props are sufficient.
-
     const products = (contextProducts.length > 0 ? contextProducts : initialProducts) || [];
     const categories = (contextCategories.length > 0 ? contextCategories : initialCategories) || [];
     const settings = (Object.keys(contextSettings).length > 1 ? contextSettings : initialSettings) || {} as SiteSettings;
 
-    // Filter Best Sellers
-    const bestSellers = products.filter(p => p.isBestSeller);
+    // ✨ DYNAMIC SECTIONS - Sort by createdAt desc
+    const latestArrivals = [...products]
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+        .slice(0, 10);
 
-    // Category Filter State
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-    // Filter Logic
-    const filteredCategories = selectedCategory === 'all'
-        ? categories
-        : categories.filter(c => c.id === selectedCategory);
+    const bestSellers = products.filter(p => p.isBestSeller).slice(0, 12);
+    const featured = products.filter(p => p.isFeatured).slice(0, 12);
 
     return (
-        <div className="min-h-screen bg-white pb-20 font-tajawal">
+        <div className="min-h-screen bg-white font-tajawal">
 
-            {/* 1. TOP BANNER — always rendered so skeleton shows immediately */}
+            {/* ===== 1. HERO BANNER ===== */}
             <HeroBanner image={settings.heroImage || ''} />
 
+            {/* ===== 2. LATEST ARRIVALS SECTION (SLIDER) ===== */}
+            {latestArrivals.length > 0 && (
+                <section className="py-16 md:py-24 overflow-hidden">
+                    <div className="container mx-auto px-4 md:px-8">
+                        <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+                            <div className={isRTL ? 'text-right' : 'text-left'}>
+                                <h2 className="text-3xl md:text-5xl font-light tracking-[0.2em] uppercase mb-4 text-gray-900">
+                                    {isRTL ? "أحدث المنتجات" : "Latest Arrivals"}
+                                </h2>
+                                <p className="text-gray-500 text-sm uppercase tracking-widest font-medium">
+                                    {isRTL ? "جديد هذا الأسبوع" : "New This Week"}
+                                </p>
+                            </div>
 
+                            {/* Desktop scroll hints */}
+                            <div className="hidden md:flex gap-2">
+                                <div className="w-12 h-[1px] bg-gray-200 mt-4 opacity-0 md:opacity-100" />
+                            </div>
+                        </div>
 
-            {/* 3. BEST SELLERS SLIDER (Only if exists) */}
-            <BestSellers products={bestSellers} />
+                        {/* Horizontal Slider Layout */}
+                        <div className="flex overflow-x-auto snap-x snap-mandatory gap-5 md:gap-8 scrollbar-hide pb-8 -mx-4 px-4 md:-mx-8 md:px-8">
+                            {latestArrivals.map((product) => (
+                                <div key={product.id} className="min-w-[260px] md:min-w-[320px] snap-start transition-opacity duration-300 flex flex-col">
+                                    <ProductCard product={product} />
+                                </div>
+                            ))}
+                            {/* Empty space for better scrolling end */}
+                            <div className="min-w-[10px] h-full" />
+                        </div>
 
-            {/* 4. ALL PRODUCTS */}
-            {products.length === 0 ? (
-                <div className="text-center py-20 px-4">
-                    <div className="bg-emerald-50 rounded-3xl p-8 max-w-2xl mx-auto border border-emerald-100">
-                        <h2 className="text-2xl font-black text-emerald-800 mb-2">Welcome to your new store! 🚀</h2>
-                        <p className="text-emerald-700 mb-6">You haven't added any products yet.</p>
-                        <a href="/admin" className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition">
-                            Go to Admin Panel
-                        </a>
+                        {/* Shop All Button - Premium Square Look */}
+                        <div className="mt-16 text-center">
+                            <Link
+                                href={`/${locale}/collections/all`}
+                                className="inline-flex items-center justify-center px-12 py-5 bg-black border border-black text-white font-light tracking-[0.3em] uppercase rounded-none hover:bg-white hover:text-black transition-all duration-500 group shadow-2xl active:scale-95 translate-y-0 hover:-translate-y-1"
+                            >
+                                {isRTL ? "عرض جميع المنتجات" : "Shop All Products"}
+                                <span className={`${isRTL ? 'mr-3' : 'ml-3'} group-hover:${isRTL ? '-translate-x-2' : 'translate-x-2'} transition-transform duration-300`}>
+                                    {isRTL ? '←' : '→'}
+                                </span>
+                            </Link>
+                        </div>
                     </div>
-                </div>
-            ) : (
-                <ProductGrid products={products} />
+                </section>
             )}
 
-            {/* 5. MIDDLE PROMO BANNER */}
-            {settings.middleBanner && (
-                <PromoBanner
-                    image={settings.middleBanner}
-                    link={settings.middleBannerLink || "#products"}
-                />
-            )}
-
-            {/* 6. CATEGORY SHOWCASE — 4 products per category, below promo banner */}
+            {/* ===== 3. CATEGORY SHOWCASE ===== */}
             <CategoryShowcase products={products} categories={categories} />
 
-            {/* 6. MID-PAGE NETFLIX SLIDER (products tagged showInMidPageSlider) */}
-            <MidPageSlider products={products} />
+            {/* ===== 3.5. 3-COLUMN CATEGORY GRID ===== */}
+            <CategoryGrid />
 
-            {/* 7. HOMEPAGE REVIEWS (Social Proof Screenshots) */}
+            {/* ===== 4. BEST SELLERS SECTION (Consistent Grid) ===== */}
+            {bestSellers.length > 0 && (
+                <section className="py-16 md:py-24 bg-gray-50/30">
+                    <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+                        <div className="mb-16 text-center">
+                            <h2 className="text-3xl md:text-5xl font-light tracking-[0.2em] uppercase mb-4 text-gray-900">
+                                {isRTL ? "الأكثر مبيعاً" : "Best Sellers"}
+                            </h2>
+                            <div className="w-24 h-[1px] bg-emerald-600 mx-auto" />
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
+                            {bestSellers.map((product) => (
+                                <ProductCard key={product.id} product={product} />
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* ===== 5. HOMEPAGE REVIEWS (Social Proof) ===== */}
             <HomepageReviews />
 
-            {/* 7. STORE REVIEWS (Text & Star Ratings) */}
+            {/* ===== 6. STORE REVIEWS (Text & Ratings) ===== */}
             <StoreReviews />
 
-            {/* 8. FEATURES BAR (Trust Signals) */}
+            {/* ===== 7. FEATURES BAR (Trust Signals) ===== */}
             {settings.showFeatures !== false && <FeaturesBar />}
 
         </div>

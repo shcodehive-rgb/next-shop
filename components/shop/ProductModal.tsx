@@ -102,12 +102,21 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                 <div className="w-full md:w-1/2 bg-gray-100 relative flex flex-col">
 
                     {/* Main Active Image */}
-                    <div className="flex-1 relative overflow-hidden group">
+                    <div
+                        className="flex-1 relative overflow-hidden group select-none"
+                        onContextMenu={(e) => e.preventDefault()}
+                    >
                         <img
                             src={product.images?.[activeImageIndex] || product.image}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 select-none"
                             key={activeImageIndex} // force re-render for anim
+                            draggable={false}
                         />
+
+                        {/* Diagonal Watermark Overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center text-white/30 text-3xl font-extrabold uppercase tracking-widest pointer-events-none transform -rotate-45 select-none z-10">
+                            Luxe Store
+                        </div>
 
                         {/* Wholsale Badge */}
                         {isWholesaleActive && (
@@ -117,7 +126,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                         )}
                         {/* Discount Badge */}
                         {(product.discountLabel) && (
-                            <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-black shadow-md z-10">
+                            <div className="absolute top-4 left-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-black shadow-md z-10">
                                 {product.discountLabel}
                             </div>
                         )}
@@ -133,8 +142,9 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                                     key={idx}
                                     onClick={() => setActiveImageIndex(idx)}
                                     className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${activeImageIndex === idx ? "border-emerald-600 opacity-100 scale-105 shadow-md" : "border-transparent opacity-60 hover:opacity-100 grayscale hover:grayscale-0"}`}
+                                    onContextMenu={(e) => e.preventDefault()}
                                 >
-                                    <img src={img} className="w-full h-full object-cover" />
+                                    <img src={img} className="w-full h-full object-cover select-none" draggable={false} />
                                 </button>
                             ))}
                         </div>
@@ -149,7 +159,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                         <div className="flex items-center gap-3 flex-wrap">
                             <span className="text-3xl font-black" style={{ color: settings.primaryColor || '#059669' }}>{totalPrice} DH</span>
                             {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                                <span className="text-xl text-gray-400 font-bold line-through decoration-red-500 decoration-2">
+                                <span className="text-xl text-gray-400 font-bold line-through decoration-emerald-500/50 decoration-2">
                                     {(Number(product.originalPrice) * qty).toFixed(2).replace(/\.00$/, '')} DH
                                 </span>
                             )}

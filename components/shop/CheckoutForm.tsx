@@ -87,8 +87,8 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                         <div style="margin-bottom: 16px; line-height: 1.5;">
                             <span style="color: #374151;">
                                 ${locale === 'ar'
-                        ? `أضف المزيد من المنتجات بقيمة <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
-                        : `Add more products worth <span style="color: #ef4444; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
+                        ? `أضف المزيد من المنتجات بقيمة <span style="color: #059669; font-weight: bold;">${remaining.toFixed(0)} درهم</span> لتأكيد طلبك.`
+                        : `Add more products worth <span style="color: #059669; font-weight: bold;">${remaining.toFixed(0)} DH</span> to confirm your order.`
                     }
                             </span>
                         </div>
@@ -130,7 +130,7 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                 city: formData.city,
                 address: formData.address
             },
-            items: itemsToOrder.map(i => `${i.title} (x${i.qty})${i.selectedVariant ? ` [${i.selectedVariant}]` : ''}`).join(", "),
+            items: itemsToOrder.map(i => `${getLocalizedTitle(i.title)} (x${i.qty})${i.selectedVariant ? ` [${i.selectedVariant}]` : ''}`).join(", "),
             total: finalTotal, // Use Final Total including shipping
             shippingCost: shippingCost,
             shopSource: settings.storeName || 'Unknown Shop',
@@ -441,7 +441,7 @@ export default function CheckoutForm({ product, className = "", directOrder, onA
                                                 removeFromCart(item.id);
                                             }
                                         }}
-                                        className="absolute -top-1 -right-1 md:static md:top-auto md:right-auto text-gray-300 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                        className="absolute -top-1 -right-1 md:static md:top-auto md:right-auto text-gray-300 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100 transition-colors"
                                         title="Remove item"
                                     >
                                         <X className="w-4 h-4" />

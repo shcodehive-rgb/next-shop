@@ -21,7 +21,17 @@
         "follow_us": "Suivez-nous",
         "rights": "Tous droits réservés",
         "information": "Informations",
-        "description": "Votre première destination pour le shopping en ligne. Qualité, garantie et livraison rapide."
+        "description": "Votre première destination pour le shopping en ligne. Qualité, garantie et livraison rapide.",
+        "policies": "Nos Politiques",
+        "home": "Accueil",
+        "equipments": "Équipements & Accessoires",
+        "packs": "Packs & Offres",
+        "arts_martiaux": "Arts Martiaux",
+        "track": "Suivre ma commande",
+        "refund_policy": "Politique de retour et d'échange",
+        "privacy_policy": "Politique de confidentialité",
+        "cod_policy": "Paiement à la livraison",
+        "shipping_policy": "Politique d'expédition et de livraison"
     },
     "Product": {
         "add_to_cart": "Ajouter au panier",

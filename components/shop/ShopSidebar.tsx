@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useShop } from "@/context/ShopContext";
 import { useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
-import { Tag, SlidersHorizontal, RotateCcw, SlidersVertical, X } from "lucide-react";
+import { useRouter, usePathname, useParams } from "next/navigation";
+import { Tag, SlidersHorizontal, RotateCcw, SlidersVertical, X, Check, Filter, ChevronDown } from "lucide-react";
 
 const MAX_PRICE = 3000;
 
@@ -14,6 +14,9 @@ function CategoryPanel({ onSelect }: { onSelect?: () => void }) {
     const { categories } = useShop();
     const locale = useLocale();
     const router = useRouter();
+    const pathname = usePathname();
+    const params = useParams();
+    const currentSlug = params.slug as string;
 
     const getCatName = (name: any) =>
         typeof name === "string" ? name : name?.[locale] || name?.ar || name?.en || "";
@@ -33,22 +36,37 @@ function CategoryPanel({ onSelect }: { onSelect?: () => void }) {
             </div>
             <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
                 <button
-                    onClick={() => go(`/${locale}/products`)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition"
+                    onClick={() => go(`/${locale}/collections/all`)}
+                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold transition ${pathname.includes('/collections/all')
+                        ? "text-emerald-700 bg-emerald-50 border-r-4 border-emerald-600"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-emerald-700"
+                        }`}
                 >
                     <span>{locale === "ar" ? "جميع المنتجات" : "All Products"}</span>
-                    <span className="text-xs bg-emerald-100 px-2 py-0.5 rounded-full">✓</span>
+                    {pathname.includes('/collections/all') && <Check className="w-3 h-3 text-emerald-600" />}
                 </button>
-                {categories.map((cat) => (
-                    <button
-                        key={cat.id}
-                        onClick={() => go(`/${locale}/collection/${cat.id}`)}
-                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-emerald-700 transition text-right"
-                    >
-                        <span>{getCatName(cat.name)}</span>
-                        <span className="text-gray-300 text-xs">›</span>
-                    </button>
-                ))}
+                {categories
+                    .filter(cat => {
+                        const catName = typeof cat.name === 'string' ? cat.name.toLowerCase() :
+                            ((cat.name as any)?.[locale]?.toLowerCase() || (cat.name as any)?.en?.toLowerCase() || (cat.name as any)?.ar?.toLowerCase() || '');
+                        return ['arts-martiaux', 'gear-accessories', 'packs-individuels', 'packs-clubs', 'equipements', 'packs-offres'].includes(catName);
+                    })
+                    .map((cat) => {
+                        const isActive = currentSlug === cat.id;
+                        return (
+                            <button
+                                key={cat.id}
+                                onClick={() => go(`/${locale}/collections/${cat.id}`)}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium transition ${isActive
+                                    ? "text-emerald-700 bg-emerald-50 border-r-4 border-emerald-600"
+                                    : "text-gray-700 hover:bg-gray-50 hover:text-emerald-700"
+                                    } text-right`}
+                            >
+                                <span>{getCatName(cat.name)}</span>
+                                {isActive ? <Check className="w-3 h-3 text-emerald-600" /> : <span className="text-gray-300 text-xs">›</span>}
+                            </button>
+                        );
+                    })}
             </div>
         </div>
     );
@@ -95,7 +113,7 @@ function PricePanel() {
                     </h2>
                 </div>
                 {hasActive && (
-                    <button onClick={reset} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 font-bold">
+                    <button onClick={reset} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors font-bold uppercase tracking-wider">
                         <RotateCcw className="w-3 h-3" />
                         {locale === "ar" ? "إعادة" : "Reset"}
                     </button>
@@ -115,8 +133,8 @@ function PricePanel() {
                                     setPriceFilter({ min: p.min, max: p.max });
                                 }}
                                 className={`text-xs px-2.5 py-1 rounded-full font-bold border transition ${active
-                                        ? "bg-emerald-600 text-white border-emerald-600"
-                                        : "bg-gray-50 text-gray-600 border-gray-200 hover:border-emerald-400 hover:text-emerald-700"
+                                    ? "bg-emerald-600 text-white border-emerald-600"
+                                    : "bg-gray-50 text-gray-600 border-gray-200 hover:border-emerald-400 hover:text-emerald-700"
                                     }`}
                             >
                                 {p.label}
@@ -162,7 +180,7 @@ function PricePanel() {
 
 export default function ShopSidebar() {
     const locale = useLocale();
-    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const { priceFilter } = useShop();
 
     const hasActiveFilter =
@@ -170,62 +188,28 @@ export default function ShopSidebar() {
 
     return (
         <>
-            {/* ── MOBILE: Filter trigger button ───────────────────────────────── */}
-            <div className="lg:hidden mb-4">
+            {/* ── MOBILE: Dropdown Filter Toggle ──────────────── */}
+            <div className="lg:hidden flex flex-col mb-4 w-full">
                 <button
-                    onClick={() => setDrawerOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm font-bold text-gray-700 hover:border-emerald-400 hover:text-emerald-700 transition-all"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="flex lg:!hidden w-full items-center justify-between border border-gray-300 p-3 mb-6 bg-white font-bold rounded-lg shadow-sm"
                 >
-                    <SlidersVertical className="w-4 h-4 text-emerald-600" />
-                    <span>{locale === "ar" ? "فلترة" : "Filter"}</span>
-                    {hasActiveFilter && (
-                        <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-                    )}
+                    <span className="font-bold text-gray-900">
+                        {locale === "ar" ? "تصفية حسب الفئة" : "Catégories"}
+                    </span>
+                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
-            </div>
 
-            {/* ── MOBILE: Bottom-sheet Drawer ─────────────────────────────────── */}
-            {drawerOpen && (
-                <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
-                    {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                        onClick={() => setDrawerOpen(false)}
-                    />
-                    {/* Sheet */}
-                    <div className="relative bg-gray-50 rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 shadow-2xl">
-                        {/* Handle + Header */}
-                        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100 bg-white rounded-t-3xl sticky top-0 z-10">
-                            <div className="flex items-center gap-2">
-                                <SlidersVertical className="w-4 h-4 text-emerald-600" />
-                                <h2 className="font-black text-gray-900">
-                                    {locale === "ar" ? "الفلاتر" : "Filters"}
-                                </h2>
-                            </div>
-                            <button
-                                onClick={() => setDrawerOpen(false)}
-                                className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
-                            >
-                                <X className="w-4 h-4 text-gray-600" />
-                            </button>
-                        </div>
-                        {/* Panels inside drawer */}
-                        <div className="p-4 space-y-4">
-                            <CategoryPanel onSelect={() => setDrawerOpen(false)} />
-                            <PricePanel />
-                            {/* Apply button */}
-                            <button
-                                onClick={() => setDrawerOpen(false)}
-                                className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition"
-                            >
-                                {locale === "ar" ? "تطبيق الفلاتر" : "Apply Filters"}
-                            </button>
-                        </div>
+                {/* Collapsible Content */}
+                <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[1000px] mt-4 opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="flex flex-col gap-4">
+                        <CategoryPanel onSelect={() => setIsOpen(false)} />
+                        <PricePanel />
                     </div>
                 </div>
-            )}
+            </div>
 
-            {/* ── DESKTOP: Sticky Sidebar ──────────────────────────────────────── */}
+            {/* ── DESKTOP: Sticky Sidebar ───────────────── */}
             <aside className="hidden lg:flex flex-col gap-4 sticky top-4">
                 <CategoryPanel />
                 <PricePanel />
